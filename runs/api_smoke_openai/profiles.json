@@ -1,0 +1,12 @@
+{
+  "gpt4o_mini_judge::safety_direct::original": {
+    "accuracy": 0.68,
+    "consistency": 1.0,
+    "base_reliability": 0.8240000000000001,
+    "base_weight": 1.5436865348713205,
+    "dependence": 0.0,
+    "vulnerabilities": {
+      "universal_phrase": 0.04
+    }
+  }
+}

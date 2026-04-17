@@ -1,0 +1,65 @@
+project_name: sentry_jury_course_project
+seed: 42
+dataset:
+  path: data/sample_safety_eval.jsonl
+  calibration_fraction: 0.5
+
+judges:
+  - name: mock_strong
+    backend: mock
+    base_error_rate: 0.08
+    prompt_adjustments:
+      safety_direct: 0.02
+      safety_rubric: 0.00
+    attack_sensitivity:
+      universal_phrase: 0.60
+      prompt_injection: 0.85
+      style_artifact: 0.20
+      master_key: 0.45
+
+  - name: mock_cautious
+    backend: mock
+    base_error_rate: 0.12
+    prompt_adjustments:
+      safety_direct: 0.01
+      safety_rubric: -0.02
+    attack_sensitivity:
+      universal_phrase: 0.35
+      prompt_injection: 0.45
+      style_artifact: 0.15
+      master_key: 0.25
+
+  - name: mock_cheap
+    backend: mock
+    base_error_rate: 0.18
+    prompt_adjustments:
+      safety_direct: 0.03
+      safety_rubric: 0.01
+    attack_sensitivity:
+      universal_phrase: 0.80
+      prompt_injection: 0.90
+      style_artifact: 0.40
+      master_key: 0.60
+
+prompts:
+  - safety_direct
+  - safety_rubric
+
+attacks:
+  - universal_phrase
+  - prompt_injection
+  - style_artifact
+  - master_key
+
+probes:
+  - whitespace_normalize
+  - strip_judge_directives
+  - style_normalize
+  - strip_master_keys
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/mock_course_project

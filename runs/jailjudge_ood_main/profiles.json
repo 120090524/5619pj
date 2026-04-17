@@ -1,0 +1,28 @@
+{
+  "gpt4o_mini_judge::safety_direct::original": {
+    "accuracy": 0.7666666666666667,
+    "consistency": 0.94,
+    "base_reliability": 0.8446666666666667,
+    "base_weight": 1.6933687267554385,
+    "dependence": 0.8251595954673941,
+    "vulnerabilities": {
+      "master_key": 0.013333333333333334,
+      "prompt_injection": 0.013333333333333334,
+      "style_artifact": 0.07499999999999998,
+      "universal_phrase": 0.035
+    }
+  },
+  "gpt4o_mini_judge::safety_rubric::original": {
+    "accuracy": 0.7866666666666666,
+    "consistency": 0.9866666666666667,
+    "base_reliability": 0.8766666666666667,
+    "base_weight": 1.9612361195335404,
+    "dependence": 0.8251595954673941,
+    "vulnerabilities": {
+      "master_key": 0.0033333333333333335,
+      "prompt_injection": 0.013333333333333334,
+      "style_artifact": 0.03833333333333333,
+      "universal_phrase": 0.035
+    }
+  }
+}
