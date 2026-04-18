@@ -32,8 +32,12 @@ def compare_clean_vs_attack(
     clean_predictions: list[dict[str, Any]],
     attacked_predictions: list[dict[str, Any]],
 ) -> dict[str, float]:
-    clean_df = pd.DataFrame(clean_predictions).rename(columns={"prediction": "clean_prediction", "abstained": "clean_abstained"})
-    attack_df = pd.DataFrame(attacked_predictions).rename(columns={"prediction": "attack_prediction", "abstained": "attack_abstained"})
+    clean_df = pd.DataFrame(clean_predictions).rename(
+        columns={"prediction": "clean_prediction", "abstained": "clean_abstained"}
+    )
+    attack_df = pd.DataFrame(attacked_predictions).rename(
+        columns={"prediction": "attack_prediction", "abstained": "attack_abstained"}
+    )
 
     merged = clean_df[["example_id", "label", "clean_prediction", "clean_abstained"]].merge(
         attack_df[["example_id", "attack_prediction", "attack_abstained"]],
@@ -42,17 +46,38 @@ def compare_clean_vs_attack(
     )
 
     if merged.empty:
-        return {"flip_rate": 0.0, "attack_success_rate": 0.0}
+        return {
+            "flip_rate": 0.0,
+            "attack_success_rate": 0.0,
+            "attack_induced_abstain_rate": 0.0,
+        }
 
+   
     non_abstain_pair = merged[(~merged["clean_abstained"]) & (~merged["attack_abstained"])].copy()
-    flip_rate = float((non_abstain_pair["clean_prediction"] != non_abstain_pair["attack_prediction"]).mean()) if not non_abstain_pair.empty else 0.0
+    flip_rate = (
+        float((non_abstain_pair["clean_prediction"] != non_abstain_pair["attack_prediction"]).mean())
+        if not non_abstain_pair.empty
+        else 0.0
+    )
 
+   
     clean_correct = (merged["clean_prediction"] == merged["label"]) & (~merged["clean_abstained"])
     attack_wrong = (merged["attack_prediction"] != merged["label"]) & (~merged["attack_abstained"])
     denom = int(clean_correct.sum())
     attack_success_rate = float((clean_correct & attack_wrong).sum() / denom) if denom > 0 else 0.0
 
+  
+    clean_predicted = ~merged["clean_abstained"]
+    attack_abstained = merged["attack_abstained"]
+    abstain_denom = int(clean_predicted.sum())
+    attack_induced_abstain_rate = (
+        float((clean_predicted & attack_abstained).sum() / abstain_denom)
+        if abstain_denom > 0
+        else 0.0
+    )
+
     return {
         "flip_rate": flip_rate,
         "attack_success_rate": attack_success_rate,
+        "attack_induced_abstain_rate": attack_induced_abstain_rate,
     }

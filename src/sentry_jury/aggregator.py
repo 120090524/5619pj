@@ -80,12 +80,17 @@ def aggregate_selectively(
     instance_risks = compute_instance_risks(base_votes, probe_votes_by_family)
     sensor_weights: dict[str, float] = {}
 
+    dep_values = [float(profiles[s]["dependence"]) for s in base_votes if s in profiles]
+    mean_dep = sum(dep_values) / len(dep_values) if dep_values else 0.0
+
     for sensor, vote in base_votes.items():
         profile = profiles[sensor]
         penalty = 0.0
         for family, risk in instance_risks.items():
             penalty += risk * float(profile["vulnerabilities"].get(family, 0.0))
-        weight = float(profile["base_weight"]) - lambda_attack * penalty - rho_dependence * float(profile["dependence"])
+        # 只惩罚比平均 dependence 高的 sensor，奖励比平均低的 sensor
+        dep_delta = float(profile["dependence"]) - mean_dep
+        weight = float(profile["base_weight"]) - lambda_attack * penalty - rho_dependence * dep_delta
         sensor_weights[sensor] = max(0.0, weight)
 
     return _finalize_output(base_votes, sensor_weights, margin=margin, instance_risks=instance_risks)

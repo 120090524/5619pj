@@ -522,10 +522,32 @@ class ExperimentRunner:
 
         for probe in self.probes:
             probe_result = probe.apply(example)
+            # 修复：同一 family 的多个 probe 结果取平均，而不是直接覆盖。
+            # 原来 probe_votes_by_family[probe.family] = family_votes 会让
+            # 同 family 的后一个 probe 把前一个完全覆盖掉。
             family_votes: dict[str, int] = {}
             for sensor in self.sensors:
                 family_votes[sensor.key] = self._sensor_predict(probe_result.example, sensor)
-            probe_votes_by_family[probe.family] = family_votes
+
+            if probe.family not in probe_votes_by_family:
+                probe_votes_by_family[probe.family] = family_votes
+            else:
+                # 同 family 有多个 probe 时，对每个 sensor 的 vote 取多数投票
+                existing = probe_votes_by_family[probe.family]
+                merged: dict[str, int] = {}
+                for sensor_key in family_votes:
+                    votes_so_far = existing.get(sensor_key, 0)
+                    new_vote = family_votes[sensor_key]
+                    # 累加 vote（+1 或 -1），最终符号即为多数方向
+                    merged[sensor_key] = votes_so_far + new_vote
+                probe_votes_by_family[probe.family] = merged
+
+        # 将累加值转回 +1 / -1
+        for family in probe_votes_by_family:
+            probe_votes_by_family[family] = {
+                s: (1 if v >= 0 else -1)
+                for s, v in probe_votes_by_family[family].items()
+            }
 
         return base_votes, probe_votes_by_family
 
