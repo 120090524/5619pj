@@ -69,51 +69,58 @@ Each sensor is a (judge, prompt) pair:
 
 ---
 
-### single_best
+### Clean (no attack)
 
-| Condition | ACC | COV | UFNR | Flip | ASR |
-|-----------|-----|-----|------|------|-----|
-| clean | 89.3% | 100% | 13.5% | — | — |
-| universal_phrase | 87.3% | 100% | 17.3% | 8.7% | 6.0% |
-| prompt_injection | 90.7% | 100% | 7.7% | 5.3% | 2.2% |
-| style_artifact | 89.3% | 100% | 17.3% | 9.3% | 5.2% |
-| master_key | 91.3% | 100% | 3.8% | 6.0% | 2.2% |
-
----
-
-### majority_vote
-
-| Condition | ACC | COV | UFNR | Flip | ASR |
-|-----------|-----|-----|------|------|-----|
-| clean | 89.3% | 100% | 3.8% | — | — |
-| universal_phrase | 78.0% | 100% | 57.7% | 26.0% | 20.9% |
-| prompt_injection | 76.7% | 100% | 65.4% | 30.0% | 23.9% |
-| style_artifact | 90.0% | 100% | 21.2% | 14.0% | 7.5% |
-| master_key | 90.7% | 100% | 0.0% | 2.7% | 0.7% |
+| Method | ACC | COV | UFNR |
+|--------|-----|-----|------|
+| single_best | 89.3% | 100% | 13.5% |
+| majority_vote | 89.3% | 100% | 3.8% |
+| clean_weighted | 92.9% | 93.3% | 4.3% |
+| sentry | 92.8% | 92.0% | 4.4% |
 
 ---
 
-### clean_weighted
+### Attack: universal_phrase
 
-| Condition | ACC | COV | UFNR | Flip | ASR |
-|-----------|-----|-----|------|------|-----|
-| clean | 92.9% | 93.3% | 4.3% | — | — |
-| universal_phrase | 78.0% | 100% | 57.7% | 21.4% | 18.5% |
-| prompt_injection | 76.7% | 100% | 65.4% | 24.3% | 20.8% |
-| style_artifact | 89.9% | 99.3% | 21.6% | 9.4% | 5.4% |
-| master_key | 91.2% | 98.0% | 0.0% | 2.9% | 1.5% |
+| Method | ACC | COV | UFNR | Flip | ASR |
+|--------|-----|-----|------|------|-----|
+| single_best | 87.3% | 100% | 17.3% | 8.7% | 6.0% |
+| majority_vote | 78.0% | 100% | 57.7% | 26.0% | 20.9% |
+| clean_weighted | 78.0% | 100% | 57.7% | 21.4% | 18.5% |
+| sentry | 78.0% | 100% | 57.7% | 21.0% | 18.0% |
 
 ---
 
-### sentry
+### Attack: prompt_injection
 
-| Condition | ACC | COV | UFNR | Flip | ASR |
-|-----------|-----|-----|------|------|-----|
-| clean | 92.8% | 92.0% | 4.4% | — | — |
-| universal_phrase | 78.0% | 100% | 57.7% | 21.0% | 18.0% |
-| prompt_injection | 76.7% | 100% | 65.4% | 23.2% | 19.5% |
-| style_artifact | 89.9% | 99.3% | 21.6% | 8.8% | 4.7% |
-| master_key | 91.2% | 98.0% | 0.0% | 2.9% | 1.6% |
+| Method | ACC | COV | UFNR | Flip | ASR |
+|--------|-----|-----|------|------|-----|
+| single_best | 90.7% | 100% | 7.7% | 5.3% | 2.2% |
+| majority_vote | 76.7% | 100% | 65.4% | 30.0% | 23.9% |
+| clean_weighted | 76.7% | 100% | 65.4% | 24.3% | 20.8% |
+| sentry | 76.7% | 100% | 65.4% | 23.2% | 19.5% |
+
+---
+
+### Attack: style_artifact
+
+| Method | ACC | COV | UFNR | Flip | ASR |
+|--------|-----|-----|------|------|-----|
+| single_best | 89.3% | 100% | 17.3% | 9.3% | 5.2% |
+| majority_vote | 90.0% | 100% | 21.2% | 14.0% | 7.5% |
+| clean_weighted | 89.9% | 99.3% | 21.6% | 9.4% | 5.4% |
+| sentry | 89.9% | 99.3% | 21.6% | 8.8% | 4.7% |
+
+---
+
+### Attack: master_key
+
+| Method | ACC | COV | UFNR | Flip | ASR |
+|--------|-----|-----|------|------|-----|
+| single_best | 91.3% | 100% | 3.8% | 6.0% | 2.2% |
+| majority_vote | 90.7% | 100% | 0.0% | 2.7% | 0.7% |
+| clean_weighted | 91.2% | 98.0% | 0.0% | 2.9% | 1.5% |
+| sentry | 91.2% | 98.0% | 0.0% | 2.9% | 1.6% |
 
 ---
 
