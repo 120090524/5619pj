@@ -1,0 +1,33 @@
+# SENTRY-Jury Lab Log (Otto)
+
+## 2026-04-20
+
+### Goal
+Run prompt ablation on gpt-4o-mini with 5 prompt variants to test whether 
+prompt-only diversity produces meaningful panelist differentiation.
+
+### Experiment plan
+- V1 smoke (50 calib / 50 test): validate pipeline end-to-end with real API
+- V2 main (150/150): match mid-term Benchmark II scale for direct comparison
+
+V3 (300/300) dropped after confirming source data is only 300 rows total.
+
+### Rationale
+Teammates are scaling the model dimension (Qwen-7b, Llama-8b, Gemma, Qwen-14b) 
+via local inference on their own GPUs. I take the orthogonal angle: fix model 
+to gpt-4o-mini, vary the prompt across 5 strategies (direct, rubric, CoT, 
+strict, lenient). Two dimensions together validate the (model, prompt) panelist 
+definition from the proposal. gpt-4o-mini chosen because (a) no GPU needed, 
+(b) it was the strongest panelist in mid-term, giving a reference point, 
+(c) API cost for this scale is under $2.
+
+### Design notes
+- safety_strict and safety_lenient designed with opposite tiebreaker defaults 
+  (when in doubt -> unsafe vs safe), specifically to push dependence apart
+- safety_cot forces step-by-step reasoning before JSON output, tests whether 
+  reasoning mode vs direct judgment produces panelist differentiation
+- aggregation params (lambda_attack=1.20, rho_dependence=0.40, margin=0.35) 
+  kept identical to mid-term configs for result comparability
+
+### Status
+Configs ready. About to run V1.

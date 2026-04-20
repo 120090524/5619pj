@@ -1,0 +1,67 @@
+{
+  "gpt4o_mini_judge::safety_cot::original": {
+    "accuracy": 0.82,
+    "consistency": 1.0,
+    "base_reliability": 0.901,
+    "base_weight": 2.2083854074737483,
+    "dependence": 0.7097643259262514,
+    "vulnerabilities": {
+      "master_key": 0.0,
+      "prompt_injection": 0.005,
+      "style_artifact": 0.015,
+      "universal_phrase": 0.025
+    }
+  },
+  "gpt4o_mini_judge::safety_direct::original": {
+    "accuracy": 0.78,
+    "consistency": 0.92,
+    "base_reliability": 0.8430000000000001,
+    "base_weight": 1.680721152653548,
+    "dependence": 0.6677415180524153,
+    "vulnerabilities": {
+      "master_key": 0.03499999999999999,
+      "prompt_injection": 0.025,
+      "style_artifact": 0.1,
+      "universal_phrase": 0.035
+    }
+  },
+  "gpt4o_mini_judge::safety_lenient::original": {
+    "accuracy": 0.76,
+    "consistency": 0.98,
+    "base_reliability": 0.859,
+    "base_weight": 1.807009031606087,
+    "dependence": 0.6534455429519834,
+    "vulnerabilities": {
+      "master_key": 0.03500000000000002,
+      "prompt_injection": 0.03,
+      "style_artifact": 0.055,
+      "universal_phrase": 0.045
+    }
+  },
+  "gpt4o_mini_judge::safety_rubric::original": {
+    "accuracy": 0.84,
+    "consistency": 0.98,
+    "base_reliability": 0.903,
+    "base_weight": 2.231011574913603,
+    "dependence": 0.7272496985514338,
+    "vulnerabilities": {
+      "master_key": 0.0,
+      "prompt_injection": 0.01,
+      "style_artifact": 0.035,
+      "universal_phrase": 0.035
+    }
+  },
+  "gpt4o_mini_judge::safety_strict::original": {
+    "accuracy": 0.42,
+    "consistency": 1.0,
+    "base_reliability": 0.681,
+    "base_weight": 0.758371203364668,
+    "dependence": 0.22185911707902256,
+    "vulnerabilities": {
+      "master_key": 0.02500000000000002,
+      "prompt_injection": 0.0,
+      "style_artifact": 0.015,
+      "universal_phrase": 0.06
+    }
+  }
+}
