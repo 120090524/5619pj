@@ -334,9 +334,10 @@ class ExperimentRunner:
             config.get("methods", ["single_best", "majority_vote", "clean_weighted", "sentry"])
         )
 
-        # In-memory cache: (sensor_key, content_hash) -> decision.
+        # Disk-backed cache: (sensor_key, content_hash) -> decision.
         self.enable_prediction_cache = bool(config.get("enable_prediction_cache", True))
-        self._prediction_cache: dict[tuple[str, str], int] = {}
+        self._disk_cache_path = self.output_dir / "prediction_cache.json"
+        self._prediction_cache: dict[tuple[str, str], int] = self._load_disk_cache()
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -398,6 +399,25 @@ class ExperimentRunner:
             return replace(example, response_a=example.response_b, response_b=example.response_a), -1
         raise ValueError(f"Unknown order variant: {sensor.order_variant}")
 
+    def _load_disk_cache(self) -> dict[tuple[str, str], int]:
+        if not self.enable_prediction_cache or not self._disk_cache_path.exists():
+            return {}
+        try:
+            with self._disk_cache_path.open("r", encoding="utf-8") as f:
+                raw = json.load(f)
+            loaded = {tuple(k.split("|||", 1)): v for k, v in raw.items()}
+            print(f"[cache] Loaded {len(loaded)} entries from disk cache.")
+            return loaded
+        except Exception:
+            return {}
+
+    def _save_disk_cache(self) -> None:
+        if not self.enable_prediction_cache:
+            return
+        raw = {"|||".join(k): v for k, v in self._prediction_cache.items()}
+        with self._disk_cache_path.open("w", encoding="utf-8") as f:
+            json.dump(raw, f)
+
     def _example_cache_key(self, example: EvalExample) -> str:
         payload = example.to_dict()
         raw = json.dumps(payload, sort_keys=True, ensure_ascii=False)
@@ -420,6 +440,7 @@ class ExperimentRunner:
         final_decision = sign_adjustment * decision
         if self.enable_prediction_cache:
             self._prediction_cache[cache_key] = final_decision
+            self._save_disk_cache()
         return final_decision
 
     def _collect_clean_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:

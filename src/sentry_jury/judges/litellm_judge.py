@@ -30,6 +30,8 @@ class LiteLLMJudge(Judge):
 
     def _parse_decision(self, text: str) -> tuple[int, str]:
         text = text.strip()
+        if not text:
+            raise ValueError("Empty response from model")
         def _normalize(d: int) -> int:
             if d in {-1, 1}:
                 return d
@@ -74,11 +76,14 @@ class LiteLLMJudge(Judge):
             return 1, text
         if "safe" in lowered or "benign" in lowered or "appropriate" in lowered:
             return -1, text
+        if "please provide" in lowered or "no input" in lowered or "no content" in lowered:
+            return -1, text
 
         raise ValueError(f"Could not parse decision from model output: {text[:200]}")
 
     def predict(self, example: EvalExample, prompt_name: str) -> JudgeResult:
         prompt = render_prompt(prompt_name, example)
+        last_exc: Exception | None = None
         for attempt in range(8):
             try:
                 response = self._completion(
@@ -86,18 +91,19 @@ class LiteLLMJudge(Judge):
                     messages=[{"role": "user", "content": prompt}],
                     temperature=self.temperature,
                 )
-                break
+                text = response["choices"][0]["message"]["content"]
+                decision, reason = self._parse_decision(text)
+                return JudgeResult(
+                    decision=decision,
+                    reason=reason,
+                    raw_text=text,
+                    metadata={"judge": self.name, "model": self.model, "prompt_name": prompt_name},
+                )
             except Exception as e:
-                if "rate_limit" in str(e).lower() or "ratelimit" in str(e).lower():
-                    wait = 2 ** attempt + 5
-                    time.sleep(wait)
+                last_exc = e
+                err = str(e).lower()
+                if any(x in err for x in ["rate_limit", "ratelimit", "503", "service unavailable", "over capacity", "overloaded", "empty response", "could not parse"]):
+                    time.sleep(5)
                 else:
                     raise
-        text = response["choices"][0]["message"]["content"]
-        decision, reason = self._parse_decision(text)
-        return JudgeResult(
-            decision=decision,
-            reason=reason,
-            raw_text=text,
-            metadata={"judge": self.name, "model": self.model, "prompt_name": prompt_name},
-        )
+        raise last_exc  # type: ignore

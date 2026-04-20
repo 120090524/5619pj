@@ -2,8 +2,8 @@ project: mixed_experiment
 seed: 42
 
 dataset:
-  path: data/sample_safety_eval.jsonl
-  calibration_fraction: 0.50
+  calibration_path: data/final/jailjudge_id_calib.jsonl
+  test_path: data/final/jailjudge_id_clean_eval.jsonl
 
 # 3 judges x 2 prompts = 6 sensors
 judges:
@@ -12,14 +12,14 @@ judges:
     model: together_ai/Qwen/Qwen2.5-7B-Instruct-Turbo
     temperature: 0.0
 
-  - name: llama8b
+  - name: gemma3n
     backend: litellm
-    model: groq/llama-3.1-8b-instant
+    model: together_ai/google/gemma-3n-E4B-it
     temperature: 0.0
 
-  - name: allam7b
+  - name: gpt_oss
     backend: litellm
-    model: groq/allam-2-7b
+    model: together_ai/openai/gpt-oss-20b
     temperature: 0.0
 
 prompts:
@@ -48,4 +48,4 @@ aggregation:
   rho_dependence: 0.40
   margin: 0.35
 
-output_dir: runs/mixed_experiment
+output_dir: runs/mixed_experiment_150

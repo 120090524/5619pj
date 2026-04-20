@@ -18,3 +18,4 @@ outputs/
 *.pdf
 .env
 .DS_Store
+runs/*/prediction_cache.json
