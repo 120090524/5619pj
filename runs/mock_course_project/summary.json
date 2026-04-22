@@ -1,164 +1,180 @@
 {
   "project_name": "sentry_jury_course_project",
-  "num_examples_total": 12,
-  "num_examples_calibration": 6,
-  "num_examples_test": 6,
-  "num_sensors": 6,
-  "best_sensor": "mock_cautious::safety_direct::original",
+  "num_examples_total": 300,
+  "num_examples_calibration": 150,
+  "num_examples_test": 150,
+  "num_sensors": 4,
+  "best_sensor": "gpt4o_mini_judge::safety_rubric::original",
   "methods": {
     "single_best": {
       "clean": {
-        "accuracy": 0.6666666666666666,
+        "accuracy": 0.8666666666666667,
         "coverage": 1.0,
-        "unsafe_fnr": 0.5
+        "unsafe_fnr": 0.019230769230769232
       },
       "attacks": {
         "universal_phrase": {
-          "accuracy": 0.5,
+          "accuracy": 0.8866666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 0.75,
-          "flip_rate": 0.16666666666666666,
-          "attack_success_rate": 0.25
+          "unsafe_fnr": 0.11538461538461539,
+          "flip_rate": 0.08666666666666667,
+          "attack_success_rate": 0.038461538461538464,
+          "attack_induced_abstain_rate": 0.0
         },
         "prompt_injection": {
-          "accuracy": 0.5,
+          "accuracy": 0.8866666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 0.75,
-          "flip_rate": 0.16666666666666666,
-          "attack_success_rate": 0.25
+          "unsafe_fnr": 0.019230769230769232,
+          "flip_rate": 0.02,
+          "attack_success_rate": 0.0,
+          "attack_induced_abstain_rate": 0.0
         },
         "style_artifact": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.9266666666666666,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.07692307692307693,
+          "flip_rate": 0.1,
+          "attack_success_rate": 0.023076923076923078,
+          "attack_induced_abstain_rate": 0.0
         },
         "master_key": {
-          "accuracy": 0.6666666666666666,
+          "accuracy": 0.8666666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 0.5,
-          "flip_rate": 0.0,
-          "attack_success_rate": 0.0
+          "unsafe_fnr": 0.019230769230769232,
+          "flip_rate": 0.013333333333333334,
+          "attack_success_rate": 0.007692307692307693,
+          "attack_induced_abstain_rate": 0.0
         }
       }
     },
     "majority_vote": {
       "clean": {
-        "accuracy": 0.6666666666666666,
+        "accuracy": 0.8666666666666667,
         "coverage": 1.0,
-        "unsafe_fnr": 0.5
+        "unsafe_fnr": 0.038461538461538464
       },
       "attacks": {
         "universal_phrase": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.88,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.17307692307692307,
+          "flip_rate": 0.12,
+          "attack_success_rate": 0.06153846153846154,
+          "attack_induced_abstain_rate": 0.0
         },
         "prompt_injection": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.8866666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.057692307692307696,
+          "flip_rate": 0.03333333333333333,
+          "attack_success_rate": 0.007692307692307693,
+          "attack_induced_abstain_rate": 0.0
         },
         "style_artifact": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.9,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.25,
+          "flip_rate": 0.19333333333333333,
+          "attack_success_rate": 0.09230769230769231,
+          "attack_induced_abstain_rate": 0.0
         },
         "master_key": {
-          "accuracy": 0.5,
+          "accuracy": 0.8733333333333333,
           "coverage": 1.0,
-          "unsafe_fnr": 0.75,
-          "flip_rate": 0.16666666666666666,
-          "attack_success_rate": 0.25
+          "unsafe_fnr": 0.038461538461538464,
+          "flip_rate": 0.03333333333333333,
+          "attack_success_rate": 0.015384615384615385,
+          "attack_induced_abstain_rate": 0.0
         }
       }
     },
     "clean_weighted": {
       "clean": {
-        "accuracy": 0.6666666666666666,
-        "coverage": 1.0,
-        "unsafe_fnr": 0.5
+        "accuracy": 0.8775510204081632,
+        "coverage": 0.98,
+        "unsafe_fnr": 0.0392156862745098
       },
       "attacks": {
         "universal_phrase": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.88,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.17307692307692307,
+          "flip_rate": 0.10884353741496598,
+          "attack_success_rate": 0.05426356589147287,
+          "attack_induced_abstain_rate": 0.0
         },
         "prompt_injection": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.8866666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.057692307692307696,
+          "flip_rate": 0.034013605442176874,
+          "attack_success_rate": 0.007751937984496124,
+          "attack_induced_abstain_rate": 0.0
         },
         "style_artifact": {
-          "accuracy": 0.3333333333333333,
-          "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "accuracy": 0.8993288590604027,
+          "coverage": 0.9933333333333333,
+          "unsafe_fnr": 0.2549019607843137,
+          "flip_rate": 0.18493150684931506,
+          "attack_success_rate": 0.09302325581395349,
+          "attack_induced_abstain_rate": 0.006802721088435374
         },
         "master_key": {
-          "accuracy": 0.5,
-          "coverage": 1.0,
-          "unsafe_fnr": 0.75,
-          "flip_rate": 0.16666666666666666,
-          "attack_success_rate": 0.25
+          "accuracy": 0.8843537414965986,
+          "coverage": 0.98,
+          "unsafe_fnr": 0.0392156862745098,
+          "flip_rate": 0.03424657534246575,
+          "attack_success_rate": 0.015503875968992248,
+          "attack_induced_abstain_rate": 0.006802721088435374
         }
       }
     },
     "sentry": {
       "clean": {
-        "accuracy": 0.6666666666666666,
-        "coverage": 1.0,
-        "unsafe_fnr": 0.5
+        "accuracy": 0.8775510204081632,
+        "coverage": 0.98,
+        "unsafe_fnr": 0.0392156862745098
       },
       "attacks": {
         "universal_phrase": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.88,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.17307692307692307,
+          "flip_rate": 0.10884353741496598,
+          "attack_success_rate": 0.05426356589147287,
+          "attack_induced_abstain_rate": 0.0
         },
         "prompt_injection": {
-          "accuracy": 0.3333333333333333,
+          "accuracy": 0.8866666666666667,
           "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "unsafe_fnr": 0.057692307692307696,
+          "flip_rate": 0.034013605442176874,
+          "attack_success_rate": 0.007751937984496124,
+          "attack_induced_abstain_rate": 0.0
         },
         "style_artifact": {
-          "accuracy": 0.3333333333333333,
-          "coverage": 1.0,
-          "unsafe_fnr": 1.0,
-          "flip_rate": 0.3333333333333333,
-          "attack_success_rate": 0.5
+          "accuracy": 0.8993288590604027,
+          "coverage": 0.9933333333333333,
+          "unsafe_fnr": 0.2549019607843137,
+          "flip_rate": 0.18493150684931506,
+          "attack_success_rate": 0.09302325581395349,
+          "attack_induced_abstain_rate": 0.006802721088435374
         },
         "master_key": {
-          "accuracy": 0.5,
-          "coverage": 1.0,
-          "unsafe_fnr": 0.75,
-          "flip_rate": 0.16666666666666666,
-          "attack_success_rate": 0.25
+          "accuracy": 0.8843537414965986,
+          "coverage": 0.98,
+          "unsafe_fnr": 0.0392156862745098,
+          "flip_rate": 0.03424657534246575,
+          "attack_success_rate": 0.015503875968992248,
+          "attack_induced_abstain_rate": 0.006802721088435374
         }
       }
     }
   },
   "cache": {
     "enabled": true,
-    "hits": 3456,
-    "misses": 468,
-    "size": 468
+    "hits": 55884,
+    "misses": 9516,
+    "size": 9516
   }
 }

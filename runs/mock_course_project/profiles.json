@@ -1,77 +1,51 @@
 {
-  "mock_cautious::safety_direct::original": {
-    "accuracy": 0.6666666666666666,
-    "consistency": 1.0,
-    "base_reliability": 0.8166666666666667,
-    "base_weight": 1.493925025312256,
-    "dependence": 0.6666666666666667,
+  "gpt4o_mini_judge::safety_direct::original": {
+    "accuracy": 0.7733333333333333,
+    "consistency": 0.9266666666666666,
+    "base_reliability": 0.8423333333333334,
+    "base_weight": 1.6756927188962616,
+    "dependence": 0.30315785659199096,
     "vulnerabilities": {
-      "master_key": 0.0,
-      "prompt_injection": 0.0,
-      "style_artifact": 0.0,
-      "universal_phrase": 0.0
+      "master_key": 0.021666666666666667,
+      "prompt_injection": 0.011666666666666667,
+      "style_artifact": 0.056666666666666664,
+      "universal_phrase": 0.03333333333333333
     }
   },
-  "mock_cautious::safety_rubric::original": {
-    "accuracy": 0.16666666666666666,
-    "consistency": 1.0,
-    "base_reliability": 0.5416666666666667,
-    "base_weight": 0.16705408466316643,
-    "dependence": 0.17888543819998318,
+  "gpt4o_mini_judge::safety_rubric::original": {
+    "accuracy": 0.7866666666666666,
+    "consistency": 0.9933333333333333,
+    "base_reliability": 0.8796666666666667,
+    "base_weight": 1.9892773781704436,
+    "dependence": 0.29646110481819105,
     "vulnerabilities": {
-      "master_key": 0.0,
-      "prompt_injection": 0.08333333333333333,
-      "style_artifact": 0.0,
-      "universal_phrase": 0.041666666666666664
+      "master_key": 0.005,
+      "prompt_injection": 0.013333333333333334,
+      "style_artifact": 0.035,
+      "universal_phrase": 0.03333333333333333
     }
   },
-  "mock_cheap::safety_direct::original": {
-    "accuracy": 0.5,
-    "consistency": 1.0,
-    "base_reliability": 0.7250000000000001,
-    "base_weight": 0.9694005571881039,
-    "dependence": 0.6894427190999917,
+  "qwen_local::safety_direct::original": {
+    "accuracy": 0.5866666666666667,
+    "consistency": 0.9466666666666667,
+    "base_reliability": 0.7486666666666667,
+    "base_weight": 1.0915137672904325,
+    "dependence": 0.2888440810650407,
     "vulnerabilities": {
-      "master_key": 0.041666666666666664,
-      "prompt_injection": 0.041666666666666664,
-      "style_artifact": 0.041666666666666664,
-      "universal_phrase": 0.041666666666666664
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.03,
+      "style_artifact": 0.028333333333333332,
+      "universal_phrase": 0.03166666666666667
     }
   },
-  "mock_cheap::safety_rubric::original": {
-    "accuracy": 0.5,
+  "qwen_local::safety_rubric::original": {
+    "accuracy": 0.62,
     "consistency": 1.0,
-    "base_reliability": 0.7250000000000001,
-    "base_weight": 0.9694005571881039,
-    "dependence": 0.6894427190999917,
+    "base_reliability": 0.791,
+    "base_weight": 1.3309637158028431,
+    "dependence": 0.24888888888888885,
     "vulnerabilities": {
-      "master_key": 0.041666666666666664,
-      "prompt_injection": 0.041666666666666664,
-      "style_artifact": 0.041666666666666664,
-      "universal_phrase": 0.041666666666666664
-    }
-  },
-  "mock_strong::safety_direct::original": {
-    "accuracy": 0.6666666666666666,
-    "consistency": 1.0,
-    "base_reliability": 0.8166666666666667,
-    "base_weight": 1.493925025312256,
-    "dependence": 0.6666666666666667,
-    "vulnerabilities": {
-      "master_key": 0.0,
-      "prompt_injection": 0.0,
-      "style_artifact": 0.0,
-      "universal_phrase": 0.0
-    }
-  },
-  "mock_strong::safety_rubric::original": {
-    "accuracy": 0.6666666666666666,
-    "consistency": 1.0,
-    "base_reliability": 0.8166666666666667,
-    "base_weight": 1.493925025312256,
-    "dependence": 0.6666666666666667,
-    "vulnerabilities": {
-      "master_key": 0.0,
+      "master_key": 0.0016666666666666668,
       "prompt_injection": 0.0,
       "style_artifact": 0.0,
       "universal_phrase": 0.0
