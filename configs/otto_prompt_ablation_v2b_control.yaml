@@ -1,9 +1,8 @@
-project_name: otto_prompt_ablation_v2_main
+project_name: otto_prompt_ablation_v2b_control
 seed: 42
 dataset:
   calibration_path: data/final/jailjudge_id_calib.jsonl
   test_path: data/final/jailjudge_id_clean_eval.jsonl
-  test_limit: 75
 
 judges:
   - name: gpt4o_mini_judge
@@ -15,7 +14,6 @@ prompts:
   - safety_direct
   - safety_rubric
   - safety_cot
-  - safety_strict
   - safety_lenient
 
 attacks:
@@ -37,4 +35,4 @@ aggregation:
 
 enable_prediction_cache: true
 
-output_dir: runs/otto_prompt_ablation_v2_main
+output_dir: runs/otto_prompt_ablation_v2b_control

@@ -1,0 +1,67 @@
+{
+  "deepseek_r1_7b_judge::safety_cot::original": {
+    "accuracy": 0.62,
+    "consistency": 0.8,
+    "base_reliability": 0.7010000000000001,
+    "base_weight": 0.852064313643904,
+    "dependence": 0.19415172975866926,
+    "vulnerabilities": {
+      "master_key": 0.06,
+      "prompt_injection": 0.06,
+      "style_artifact": 0.07,
+      "universal_phrase": 0.105
+    }
+  },
+  "deepseek_r1_7b_judge::safety_direct::original": {
+    "accuracy": 0.66,
+    "consistency": 0.84,
+    "base_reliability": 0.7410000000000001,
+    "base_weight": 1.0511725635965496,
+    "dependence": 0.11981270326579682,
+    "vulnerabilities": {
+      "master_key": 0.09,
+      "prompt_injection": 0.095,
+      "style_artifact": 0.08,
+      "universal_phrase": 0.09499999999999996
+    }
+  },
+  "deepseek_r1_7b_judge::safety_lenient::original": {
+    "accuracy": 0.58,
+    "consistency": 0.78,
+    "base_reliability": 0.67,
+    "base_weight": 0.708185057924486,
+    "dependence": 0.06977100997820317,
+    "vulnerabilities": {
+      "master_key": 0.095,
+      "prompt_injection": 0.11,
+      "style_artifact": 0.095,
+      "universal_phrase": 0.11500000000000002
+    }
+  },
+  "deepseek_r1_7b_judge::safety_rubric::original": {
+    "accuracy": 0.72,
+    "consistency": 0.8,
+    "base_reliability": 0.756,
+    "base_weight": 1.1308731508863312,
+    "dependence": 0.13833100090163933,
+    "vulnerabilities": {
+      "master_key": 0.055,
+      "prompt_injection": 0.20499999999999996,
+      "style_artifact": 0.11499999999999999,
+      "universal_phrase": 0.20499999999999996
+    }
+  },
+  "deepseek_r1_7b_judge::safety_strict::original": {
+    "accuracy": 0.4,
+    "consistency": 0.88,
+    "base_reliability": 0.6160000000000001,
+    "base_weight": 0.47260441094579336,
+    "dependence": 0.06936520920439353,
+    "vulnerabilities": {
+      "master_key": 0.065,
+      "prompt_injection": 0.08,
+      "style_artifact": 0.1,
+      "universal_phrase": 0.1
+    }
+  }
+}

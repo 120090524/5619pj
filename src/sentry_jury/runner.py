@@ -339,6 +339,8 @@ class ExperimentRunner:
         self._prediction_cache: dict[tuple[str, str], int] = {}
         self._cache_hits = 0
         self._cache_misses = 0
+        self._cache_file = self.output_dir / "prediction_cache.json"
+        self._load_cache()
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "ExperimentRunner":
@@ -397,6 +399,25 @@ class ExperimentRunner:
 
             return replace(example, response_a=example.response_b, response_b=example.response_a), -1
         raise ValueError(f"Unknown order variant: {sensor.order_variant}")
+
+    def _load_cache(self) -> None:
+        if not self.enable_prediction_cache or not self._cache_file.exists():
+            return
+        try:
+            with self._cache_file.open("r", encoding="utf-8") as f:
+                raw = json.load(f)
+            self._prediction_cache = {
+                tuple(k.split("||", 1)): int(v) for k, v in raw.items()
+            }
+        except Exception:
+            self._prediction_cache = {}
+
+    def _flush_cache(self) -> None:
+        if not self.enable_prediction_cache:
+            return
+        raw = {"||".join(k): v for k, v in self._prediction_cache.items()}
+        with self._cache_file.open("w", encoding="utf-8") as f:
+            json.dump(raw, f)
 
     def _example_cache_key(self, example: EvalExample) -> str:
         payload = example.to_dict()
@@ -598,7 +619,13 @@ class ExperimentRunner:
         return outputs
 
     def run(self) -> dict[str, Any]:
-        profiles = self.calibrate()
+        profiles_path = self.output_dir / "profiles.json"
+        if profiles_path.exists():
+            with profiles_path.open("r", encoding="utf-8") as f:
+                profiles = json.load(f)
+        else:
+            profiles = self.calibrate()
+            self._flush_cache()
         if not profiles:
             raise ValueError("No sensor profiles were computed. Check judges / prompts / dataset.")
 
@@ -635,6 +662,7 @@ class ExperimentRunner:
                 method_summary["attacks"][attack_name] = {**attacked_metrics, **delta}
 
             summary["methods"][method] = method_summary
+            self._flush_cache()
 
         summary["cache"] = {
             "enabled": self.enable_prediction_cache,

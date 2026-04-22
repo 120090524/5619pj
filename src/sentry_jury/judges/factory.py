@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .base import Judge
+from .hf_local_judge import HFLocalJudge
 from .litellm_judge import LiteLLMJudge
 from .mock import MockJudge
 
@@ -24,6 +25,16 @@ def build_judge(spec: dict[str, Any]) -> Judge:
             name=name,
             model=spec["model"],
             temperature=float(spec.get("temperature", 0.0)),
+            timeout=int(spec.get("timeout", 120)),
+        )
+
+    if backend == "hf_local":
+        return HFLocalJudge(
+            name=name,
+            model_id=spec["model"],
+            max_new_tokens=int(spec.get("max_new_tokens", 512)),
+            temperature=float(spec.get("temperature", 0.0)),
+            device=str(spec.get("device", "cuda")),
         )
 
     raise ValueError(f"Unknown judge backend: {backend}")

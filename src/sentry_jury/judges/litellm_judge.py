@@ -17,10 +17,11 @@ class LiteLLMJudge(Judge):
     - It is suitable for a class project, but you may want retries/caching for larger runs.
     """
 
-    def __init__(self, name: str, model: str, temperature: float = 0.0) -> None:
+    def __init__(self, name: str, model: str, temperature: float = 0.0, timeout: int = 120) -> None:
         super().__init__(name=name)
         self.model = model
         self.temperature = temperature
+        self.timeout = timeout
         try:
             from litellm import completion
         except ImportError as exc:
@@ -28,7 +29,8 @@ class LiteLLMJudge(Judge):
         self._completion = completion
 
     def _parse_decision(self, text: str) -> tuple[int, str]:
-        text = text.strip()
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+        text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
         # First try direct JSON.
         try:
             payload = json.loads(text)
@@ -59,17 +61,30 @@ class LiteLLMJudge(Judge):
         if '"decision": -1' in lowered or "decision: -1" in lowered:
             return -1, text
 
-        raise ValueError(f"Could not parse decision from model output: {text[:200]}")
+        raise ValueError("Could not parse decision from model output: " + repr(text[:500]))
 
     def predict(self, example: EvalExample, prompt_name: str) -> JudgeResult:
         prompt = render_prompt(prompt_name, example)
-        response = self._completion(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=self.temperature,
-        )
-        text = response["choices"][0]["message"]["content"]
-        decision, reason = self._parse_decision(text)
+        last_exc: Exception = ValueError("no attempts made")
+        for _ in range(3):
+            response = self._completion(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.temperature,
+                timeout=self.timeout,
+            )
+            text = response["choices"][0]["message"]["content"]
+            if not text or not text.strip():
+                last_exc = ValueError("empty response from model")
+                continue
+            try:
+                decision, reason = self._parse_decision(text)
+                break
+            except ValueError as e:
+                last_exc = e
+                continue
+        else:
+            raise last_exc
         return JudgeResult(
             decision=decision,
             reason=reason,

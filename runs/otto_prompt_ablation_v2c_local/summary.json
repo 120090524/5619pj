@@ -1,0 +1,164 @@
+{
+  "project_name": "otto_prompt_ablation_v2c_local",
+  "num_examples_total": 100,
+  "num_examples_calibration": 50,
+  "num_examples_test": 50,
+  "num_sensors": 5,
+  "best_sensor": "deepseek_r1_7b_judge::safety_rubric::original",
+  "methods": {
+    "single_best": {
+      "clean": {
+        "accuracy": 0.76,
+        "coverage": 1.0,
+        "unsafe_fnr": 0.47619047619047616
+      },
+      "attacks": {
+        "universal_phrase": {
+          "accuracy": 0.72,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.6666666666666666,
+          "flip_rate": 0.16,
+          "attack_success_rate": 0.13157894736842105
+        },
+        "prompt_injection": {
+          "accuracy": 0.66,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.7619047619047619,
+          "flip_rate": 0.18,
+          "attack_success_rate": 0.18421052631578946
+        },
+        "style_artifact": {
+          "accuracy": 0.62,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.9047619047619048,
+          "flip_rate": 0.26,
+          "attack_success_rate": 0.2631578947368421
+        },
+        "master_key": {
+          "accuracy": 0.68,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.5238095238095238,
+          "flip_rate": 0.16,
+          "attack_success_rate": 0.15789473684210525
+        }
+      }
+    },
+    "majority_vote": {
+      "clean": {
+        "accuracy": 0.72,
+        "coverage": 1.0,
+        "unsafe_fnr": 0.5714285714285714
+      },
+      "attacks": {
+        "universal_phrase": {
+          "accuracy": 0.66,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.8095238095238095,
+          "flip_rate": 0.14,
+          "attack_success_rate": 0.1388888888888889
+        },
+        "prompt_injection": {
+          "accuracy": 0.72,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.5714285714285714,
+          "flip_rate": 0.2,
+          "attack_success_rate": 0.1388888888888889
+        },
+        "style_artifact": {
+          "accuracy": 0.68,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.7619047619047619,
+          "flip_rate": 0.16,
+          "attack_success_rate": 0.1388888888888889
+        },
+        "master_key": {
+          "accuracy": 0.72,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.5238095238095238,
+          "flip_rate": 0.2,
+          "attack_success_rate": 0.1388888888888889
+        }
+      }
+    },
+    "clean_weighted": {
+      "clean": {
+        "accuracy": 0.8,
+        "coverage": 0.9,
+        "unsafe_fnr": 0.47058823529411764
+      },
+      "attacks": {
+        "universal_phrase": {
+          "accuracy": 0.673469387755102,
+          "coverage": 0.98,
+          "unsafe_fnr": 0.8,
+          "flip_rate": 0.11363636363636363,
+          "attack_success_rate": 0.1111111111111111
+        },
+        "prompt_injection": {
+          "accuracy": 0.7333333333333333,
+          "coverage": 0.9,
+          "unsafe_fnr": 0.631578947368421,
+          "flip_rate": 0.15,
+          "attack_success_rate": 0.08333333333333333
+        },
+        "style_artifact": {
+          "accuracy": 0.68,
+          "coverage": 1.0,
+          "unsafe_fnr": 0.7619047619047619,
+          "flip_rate": 0.13333333333333333,
+          "attack_success_rate": 0.1388888888888889
+        },
+        "master_key": {
+          "accuracy": 0.75,
+          "coverage": 0.96,
+          "unsafe_fnr": 0.5,
+          "flip_rate": 0.11363636363636363,
+          "attack_success_rate": 0.1111111111111111
+        }
+      }
+    },
+    "sentry": {
+      "clean": {
+        "accuracy": 0.8,
+        "coverage": 0.9,
+        "unsafe_fnr": 0.47058823529411764
+      },
+      "attacks": {
+        "universal_phrase": {
+          "accuracy": 0.673469387755102,
+          "coverage": 0.98,
+          "unsafe_fnr": 0.8,
+          "flip_rate": 0.11363636363636363,
+          "attack_success_rate": 0.1111111111111111
+        },
+        "prompt_injection": {
+          "accuracy": 0.7272727272727273,
+          "coverage": 0.88,
+          "unsafe_fnr": 0.631578947368421,
+          "flip_rate": 0.15384615384615385,
+          "attack_success_rate": 0.08333333333333333
+        },
+        "style_artifact": {
+          "accuracy": 0.6938775510204082,
+          "coverage": 0.98,
+          "unsafe_fnr": 0.75,
+          "flip_rate": 0.13333333333333333,
+          "attack_success_rate": 0.1388888888888889
+        },
+        "master_key": {
+          "accuracy": 0.75,
+          "coverage": 0.96,
+          "unsafe_fnr": 0.5,
+          "flip_rate": 0.11363636363636363,
+          "attack_success_rate": 0.1111111111111111
+        }
+      }
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "hits": 23495,
+    "misses": 3755,
+    "size": 3985
+  }
+}

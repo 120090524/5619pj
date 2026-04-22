@@ -1,14 +1,16 @@
-project_name: otto_prompt_ablation_v2_main
+project_name: otto_prompt_ablation_v2c_local
 seed: 42
 dataset:
   calibration_path: data/final/jailjudge_id_calib.jsonl
   test_path: data/final/jailjudge_id_clean_eval.jsonl
-  test_limit: 75
+  calibration_limit: 50
+  test_limit: 50
 
 judges:
-  - name: gpt4o_mini_judge
-    backend: litellm
-    model: openai/gpt-4o-mini
+  - name: deepseek_r1_7b_judge
+    backend: hf_local
+    model: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+    max_new_tokens: 2048
     temperature: 0.0
 
 prompts:
@@ -37,4 +39,4 @@ aggregation:
 
 enable_prediction_cache: true
 
-output_dir: runs/otto_prompt_ablation_v2_main
+output_dir: runs/otto_prompt_ablation_v2c_local

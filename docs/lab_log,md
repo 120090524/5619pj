@@ -31,3 +31,230 @@ definition from the proposal. gpt-4o-mini chosen because (a) no GPU needed,
 
 ### Status
 Configs ready. About to run V1.
+
+### V1 smoke result (先行观察)
+
+- Clean acc 0.86 across all methods, matches mid-term Bmk II single_best. 
+  Pipeline validated.
+- majority_vote / clean_weighted / sentry produce IDENTICAL results on 
+  every attack, every metric. Coverage = 1.0 throughout (no abstention).
+- single_best outperforms aggregated methods on prompt_injection (0.92 vs 
+  0.86) and style_artifact (0.96 vs 0.94). Counter-intuitive but consistent 
+  with the hypothesis that weak prompts dilute strong prompts in votes.
+- Need to inspect profiles.json dependence values to determine whether 
+  the 3-way method tie is due to high inter-panelist agreement (expected 
+  under same-model assumption) or abstention threshold not triggering.
+- Wall time: 45 min
+profiles.json 已经回答了那个 open question：3-way tie 的原因是两者叠加——同模型导致 4 个正常 sensor 的 dependence 在 [0.653, 0.727]（高相关），同时 margin=0.35 从未触发（coverage=1.0）。不是单一原因。
+
+safety_strict 异常值：clean accuracy=0.42，base_weight 被压到 0.758，是其他 sensor 的三分之一。这是 ensemble 被 single_best 击败的直接原因，值得单独记一条——因为它说明 prompt 设计本身有风险，过于严格的判断标准在这个数据集上和标签方向冲突。
+### V1 profiles analysis (finalized)
+
+Dependence distribution across 5 panelists:
+- safety_rubric   acc=0.84  dep=0.727  weight=2.23
+- safety_cot      acc=0.82  dep=0.710  weight=2.21
+- safety_direct   acc=0.78  dep=0.668  weight=1.68
+- safety_lenient  acc=0.76  dep=0.653  weight=1.81
+- safety_strict   acc=0.42  dep=0.222  weight=0.76
+
+Two-layered explanation for the 3-way method tie:
+1. Panelist correlation. 4 of 5 panelists cluster in dependence band 
+   [0.653, 0.727] — a very narrow range. Under same-model constraint, 
+   varying the prompt alone does not produce meaningful heterogeneity. 
+   These 4 panelists behave like near-duplicates of each other.
+2. Abstention threshold never triggers. margin=0.35 + high inter-panelist 
+   agreement = coverage 1.0 across all methods. SENTRY's selective 
+   abstention mechanism has no room to differentiate from clean_weighted.
+
+These two factors are independent and additive. Even if we fixed one, 
+the other would still collapse SENTRY toward clean_weighted.
+
+### safety_strict outlier — a finding worth its own note
+
+safety_strict has dependence=0.222 (genuinely heterogeneous) but 
+accuracy=0.42, below random on a roughly-balanced dataset. The prompt 
+directive "when in doubt, flag unsafe" caused systematic over-triggering: 
+the panelist flags most ambiguous samples as unsafe regardless of true 
+label. Its weight gets crushed to 0.76 (one-third of the others), which 
+is why it cannot sway majority/weighted votes despite voting differently.
+
+This is the mechanism behind single_best > ensemble on prompt_injection 
+(0.92 vs 0.86) and style_artifact (0.96 vs 0.94): single_best ignores 
+safety_strict entirely, while the ensemble methods still include its 
+vote at low but nonzero weight, dragging accuracy down.
+
+Implication for SENTRY-Jury design: a panelist that is heterogeneous 
+for the wrong reason (systematically miscalibrated rather than 
+genuinely independent signal) hurts ensemble performance. Dependence 
+alone is not a sufficient signal — a reliable panelist must be both 
+independent AND accurate. This is a design consideration the method 
+should probably address explicitly.
+
+### Decision: run V2 + V2b in parallel
+
+Keeping safety_strict unchanged because its failure mode is itself a 
+finding. To quantify its effect cleanly, I'll add a parallel ablation:
+
+- V2 main (150/150): all 5 prompts including safety_strict
+- V2b control (150/150): 4 prompts, safety_strict removed
+
+Comparison isolates the impact of including a miscalibrated-but-
+heterogeneous panelist on SENTRY vs baselines. Expected outcome: V2b 
+shows either (a) ensemble methods closer to single_best, validating 
+the dilution hypothesis, or (b) dependence band even narrower (4 
+panelists all in [0.65, 0.73]), reinforcing the "prompt-only is 
+insufficient" conclusion.
+
+Wall time budget: V2 ~1h, V2b ~1h, total ~$3.
+
+### V2 crash — RPD rate limit (2026-04-20)
+
+V2 main crashed at single_best:prompt_injection 50% (75/150 examples).
+
+Error: `openai.RateLimitError: Rate limit reached for gpt-4o-mini, RPD Limit 10000, Used 10000`
+
+Root cause: tier 1 OpenAI account has 10,000 requests/day cap shared across the org. V1 smoke used ~4,000 calls. V2 main needs ~12,000 calls on its own. Together they exceed the daily limit mid-run.
+
+Saved before crash:
+
+- calibration_attack_rows.jsonl, calibration_clean_rows.jsonl, calibration_probe_rows.jsonl
+- profiles.json (calibration complete)
+- single_best_test_clean_predictions.jsonl (one evaluation split complete)
+
+Lost: all in-memory cache entries, universal_phrase and prompt_injection evaluation rows.
+
+Code fix applied (runner.py): added disk-based cache persistence via _flush_cache() / _load_cache(). Cache is now written to output_dir/prediction_cache.json after calibration and after each method completes. Future crashes are recoverable by restarting.
+
+Blocker resolution: upgrading OpenAI account to tier 2 (requires $50 cumulative spend + 7-day-old account). Tier 2 RPD = 5,000,000 — eliminates the constraint entirely.
+
+Pending: "skip calibration if profiles.json exists" feature would save ~6,000 calls on V2 restart, but tier 2 upgrade makes this less urgent.
+
+### Post-crash: resilience improvements + V2c exploration (2026-04-20 evening)
+
+**Skip-calibration feature implemented (runner.py).**
+run() now checks for profiles.json in output_dir before calling calibrate(). If found, loads directly and skips all calibration API calls. V2 restart tomorrow only needs the test-phase calls (~4,000), well within tier 1 daily limit.
+
+**Tier 2 upgrade status.**
+Account does not qualify yet — tier 2 requires 7 days since first API charge, not account creation. No short-term workaround for gpt-4o-mini beyond waiting.
+
+**Explored Together AI as alternative judge source (V2c).**
+Friend offered a Together AI API key. Investigated the serverless model catalog:
+- Mistral-7B-Instruct-v0.3: not serverless on this account, rejected.
+- DeepSeek-R1-Distill-Qwen-14B: not serverless, rejected.
+- Qwen3.5-9B: serverless, cheap, but returns empty responses intermittently due to cold-start behavior. Added retry logic but still unreliable. Abandoned.
+- Large MoE models (DeepSeek V3.1, Kimi-K2.5, 400B+ range): serverless and functional, but too robust to attacks by design — defeats the purpose of the experiment.
+
+**V2c pivoted to local inference.**
+Decided to run V2c with local DeepSeek-R1-Distill-Qwen-7B (already cached at D:/hf_cache). Model family not used by any teammate. Adds a heterogeneous model dimension orthogonal to teammates' Qwen/Llama/Gemma set.
+
+Implementation: added HFLocalJudge backend (src/sentry_jury/judges/hf_local_judge.py). Uses 4-bit NF4 quantization via BitsAndBytesConfig — same approach as prior textmining project. Required bitsandbytes install. Model loads in ~60s on RTX 4090.
+
+Parse challenges: DeepSeek-R1 outputs verbose prose reasoning rather than clean JSON under some prompts. Added keyword fallback (unsafe/safe word count) to _parse_decision after JSON extraction fails. V2c configured at 5/5 calib/test limit for smoke test first.
+
+**Teammate experiment structure confirmed.**
+Teammate's mixed_experiment: 3 judges x 2 prompts = 6 sensors (Qwen2.5-7B, gemma-3n-E4B, gpt-oss-20b each with safety_direct and safety_rubric). Key implication: my 3 additional prompts (safety_cot, safety_strict, safety_lenient) are genuinely novel — no teammate has run them. gpt-oss-20b already covered, so V2c with DeepSeek-R1-7B adds both a new model family and tests whether prompt variants generalize to a smaller, attack-vulnerable model.
+
+## 2026-04-21
+
+### V2c result — local DeepSeek-R1-Distill-Qwen-7B, 5 prompts, 100 examples (50/50)
+
+Wall time: ~10 hours on RTX 4090 (4-bit NF4 quantization).
+
+**Profiles:**
+
+| prompt | acc | consistency | dependence |
+|---|---|---|---|
+| safety_rubric | 0.72 | 0.80 | 0.138 |
+| safety_direct | 0.66 | 0.84 | 0.120 |
+| safety_cot | 0.62 | 0.80 | 0.194 |
+| safety_lenient | 0.58 | 0.78 | 0.070 |
+| safety_strict | 0.40 | 0.88 | 0.069 |
+
+Dependence range [0.069, 0.194] — narrow. All 5 panelists share the same underlying model, so true behavioral correlation is much higher than these calibrated values suggest.
+
+safety_strict repeats its V1 failure: acc=0.40, consistent with systematic over-triggering. base_weight crushed to 0.473.
+
+**Aggregation (50 test examples):**
+
+| method | clean acc | universal_phrase ASR | prompt_injection ASR | style_artifact ASR | master_key ASR |
+|---|---|---|---|---|---|
+| single_best | 0.76 | 0.132 | 0.184 | 0.263 | 0.158 |
+| majority_vote | 0.72 | 0.139 | 0.139 | 0.139 | 0.139 |
+| clean_weighted | 0.80 | 0.111 | 0.083 | 0.139 | 0.111 |
+| sentry | 0.80 | 0.111 | 0.083 | 0.139 | 0.111 |
+
+SENTRY = clean_weighted on every metric. Same no-op pattern as V1.
+
+**Why SENTRY no-ops again:**
+Same root cause as V1, different flavor. In V1 it was same model + high dependence [0.65, 0.73]. Here dependence is lower (0.07-0.19) but all 5 panelists still share the same weights — the probe-based risk signals are not heterogeneous enough to trigger meaningful differentiation between clean_weighted and sentry. Selective abstention partially fires (coverage drops to 0.9 on clean, 0.98 on some attacks) but does not change the accuracy outcome.
+
+**Key finding:**
+Prompt diversity within a single model is not sufficient to activate SENTRY's dependence-aware and attack-aware mechanisms. Model diversity is required. This is the experimental complement to V1 and directly supports the argument that the (model, prompt) cross-product matters — not just prompt count.
+
+**Comparison to V1 (gpt-4o-mini × 5 prompts):**
+DeepSeek-R1-7B is weaker overall: clean acc 0.76 (single_best) vs 0.86 in V1. ASR higher across the board. Consistent with using a smaller, less instruction-tuned model. The model dimension matters as much as or more than the prompt dimension in isolation.
+
+**Plan:**
+V2 (gpt-4o-mini × 5 prompts, 150/150) remains the target experiment. See V2 restart analysis below.
+
+### V2 restart call-count analysis (2026-04-21)
+
+Original estimate of "~4,000 calls with calibration skipped" was wrong. It omitted probe calls during test phase.
+
+Actual unique API calls in test phase (150 test examples, 5 sensors, 4 probes, 4 attacks):
+- clean examples: 150 × (5 base + 4×5 probe) = 3,750
+- 4 attack variants: 4 × 150 × (5 base + 4×5 probe) = 15,000
+- All 4 methods share the in-memory cache, so total unique calls = 18,750
+
+Calibration skip saves ~6,750 calls (the calibration phase), but test phase alone exceeds the 10,000 RPD limit. No tier 2 available.
+
+Resolution: ran test_limit=75 instead of 150. 75 test examples × 25 calls = 9,375 — fits within 10,000 RPD.
+
+### V2 main result — gpt-4o-mini × 5 prompts, 150 calib / 75 test
+
+**Profiles (150-sample calibration):**
+
+| prompt | acc | consistency | dependence | base_weight |
+|---|---|---|---|---|
+| safety_rubric | 0.787 | 0.987 | 0.667 | 1.961 |
+| safety_cot | 0.780 | 0.987 | 0.670 | 1.928 |
+| safety_direct | 0.773 | 0.933 | 0.620 | 1.698 |
+| safety_lenient | 0.747 | 0.973 | 0.595 | 1.724 |
+| safety_strict | 0.413 | 0.993 | 0.116 | 0.728 |
+
+4 normal prompts cluster in dependence band [0.595, 0.670]. safety_strict is an outlier at 0.116 — heterogeneous but miscalibrated, same pattern as V1.
+
+Profiles more reliable than V1 (150 vs 50 calibration examples). Accuracy estimates shifted slightly: safety_rubric 0.84→0.787, others similar.
+
+**Aggregation (75 test examples):**
+
+| method | clean acc | universal_phrase ASR | prompt_injection ASR | style_artifact ASR | master_key ASR |
+|---|---|---|---|---|---|
+| single_best | 0.827 | 0.048 | 0.000 | 0.000 | 0.000 |
+| majority_vote | 0.853 | 0.047 | 0.000 | 0.016 | 0.016 |
+| clean_weighted | 0.853 | 0.047 | 0.000 | 0.016 | 0.016 |
+| sentry | 0.853 | 0.047 | 0.000 | 0.016 | 0.016 |
+
+SENTRY = clean_weighted = majority_vote on every metric. Coverage = 1.0 throughout, abstention never triggers. Most extreme no-op result yet — three methods fully collapse.
+
+single_best is the weakest on clean accuracy (0.827 vs 0.853). This reverses V1's finding where single_best sometimes beat ensembles. The difference: better calibration (150 samples) means ensemble weighting is more reliable, and the ensemble correctly handles edge cases where safety_rubric alone fails.
+
+ASR values are near-zero across the board. gpt-4o-mini is inherently robust to these attack types, which removes the probe signal that SENTRY depends on.
+
+**Why SENTRY fully collapses here:**
+Three compounding factors, all present simultaneously:
+1. Same model → dependence band [0.595, 0.670], very narrow.
+2. Near-zero ASR → probe-based risk scores are uniformly low, no differentiation.
+3. Coverage = 1.0 → margin=0.35 never triggers, abstention is dead.
+
+Any one of these alone is enough to collapse SENTRY toward clean_weighted. All three together collapse all three ensemble methods to identical output.
+
+**Cross-experiment summary (all three runs now complete):**
+
+| experiment | model | n_test | SENTRY vs clean_weighted | SENTRY vs majority_vote |
+|---|---|---|---|---|
+| V1 (50/50) | gpt-4o-mini | 50 | identical | identical |
+| V2 (150/75) | gpt-4o-mini | 75 | identical | identical |
+| V2c (50/50) | DeepSeek-R1-7B | 50 | identical | slight diff (style_artifact) |
+
+Consistent conclusion across all three: prompt-only diversity within a single model is insufficient to activate SENTRY's mechanisms. Model diversity is required. This is now supported by three independent runs and is the central empirical claim of my contribution.

@@ -18,3 +18,5 @@ outputs/
 *.pdf
 .env
 .DS_Store
+prediction_cache.json
+test_together.py
