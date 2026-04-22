@@ -1,0 +1,80 @@
+{
+  "llama3lite_a::safety_direct::original": {
+    "accuracy": 0.38666666666666666,
+    "consistency": 0.94,
+    "base_reliability": 0.6356666666666666,
+    "base_weight": 0.5566051174238802,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.21,
+      "style_artifact": 0.013333333333333334,
+      "universal_phrase": 0.13833333333333334
+    }
+  },
+  "llama3lite_a::safety_rubric::original": {
+    "accuracy": 0.6133333333333333,
+    "consistency": 0.94,
+    "base_reliability": 0.7603333333333333,
+    "base_weight": 1.154507864563341,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.02,
+      "style_artifact": 0.02666666666666667,
+      "universal_phrase": 0.03
+    }
+  },
+  "llama3lite_b::safety_direct::original": {
+    "accuracy": 0.38666666666666666,
+    "consistency": 0.94,
+    "base_reliability": 0.6356666666666666,
+    "base_weight": 0.5566051174238802,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.21,
+      "style_artifact": 0.013333333333333334,
+      "universal_phrase": 0.13833333333333334
+    }
+  },
+  "llama3lite_b::safety_rubric::original": {
+    "accuracy": 0.6133333333333333,
+    "consistency": 0.94,
+    "base_reliability": 0.7603333333333333,
+    "base_weight": 1.154507864563341,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.02,
+      "style_artifact": 0.02666666666666667,
+      "universal_phrase": 0.03
+    }
+  },
+  "llama3lite_c::safety_direct::original": {
+    "accuracy": 0.38666666666666666,
+    "consistency": 0.94,
+    "base_reliability": 0.6356666666666666,
+    "base_weight": 0.5566051174238802,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.20833333333333334,
+      "style_artifact": 0.013333333333333334,
+      "universal_phrase": 0.13833333333333334
+    }
+  },
+  "llama3lite_c::safety_rubric::original": {
+    "accuracy": 0.6133333333333333,
+    "consistency": 0.94,
+    "base_reliability": 0.7603333333333333,
+    "base_weight": 1.154507864563341,
+    "dependence": 0.4570841055322557,
+    "vulnerabilities": {
+      "master_key": 0.011666666666666667,
+      "prompt_injection": 0.02,
+      "style_artifact": 0.02666666666666667,
+      "universal_phrase": 0.03
+    }
+  }
+}
