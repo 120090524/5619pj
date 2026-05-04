@@ -1,0 +1,42 @@
+project_name: judgebench_transfer_gpt
+seed: 42
+
+dataset:
+  path: data/converted/judgebench_gpt.jsonl
+  calibration_fraction: 0.5
+  calibration_limit: 100
+  test_limit: 100
+
+judges:
+  - name: gpt4o_mini_judge
+    backend: litellm
+    model: openai/gpt-4o-mini
+    temperature: 0.0
+
+prompts:
+  - pairwise_direct
+  - pairwise_rubric
+
+attacks: []
+
+probes:
+  - whitespace_normalize
+
+methods:
+  - single_best
+  - majority_vote
+  - clean_weighted
+  - sentry
+
+enable_prediction_cache: true
+order_variants:
+  - original
+  - swapped
+attacks_target_field: response_a
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/judgebench_transfer_gpt

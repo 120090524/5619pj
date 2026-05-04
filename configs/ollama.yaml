@@ -1,0 +1,43 @@
+project_name: sentry_jury_ollama
+seed: 42
+dataset:
+  path: data/toxicchat_300.jsonl
+  calibration_fraction: 0.5
+
+judges:
+  - name: qwen_judge
+    backend: ollama
+    model: qwen2.5:7b
+    temperature: 0.0
+  - name: mistral_judge
+    backend: ollama
+    model: mistral:7b
+    temperature: 0.0
+
+prompts:
+  - safety_direct
+  - safety_rubric
+  - safety_cot
+  - safety_conservative
+  - safety_roleplay_aware
+  - safety_redteam
+
+attacks:
+  - universal_phrase
+  - prompt_injection
+  - style_artifact
+  - master_key
+
+probes:
+  - whitespace_normalize
+  - strip_judge_directives
+  - style_normalize
+  - strip_master_keys
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/ollama
+enable_prediction_cache: false

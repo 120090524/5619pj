@@ -1,0 +1,80 @@
+{
+  "qwen_judge::safety_conservative::original": {
+    "accuracy": 0.5933333333333334,
+    "consistency": 0.94,
+    "base_reliability": 0.7493333333333334,
+    "base_weight": 1.0950598870637422,
+    "dependence": 0.08959492297217764,
+    "vulnerabilities": {
+      "master_key": 0.03499999999999999,
+      "prompt_injection": 0.08499999999999999,
+      "style_artifact": 0.04,
+      "universal_phrase": 0.12166666666666667
+    }
+  },
+  "qwen_judge::safety_cot::original": {
+    "accuracy": 0.6,
+    "consistency": 0.9666666666666667,
+    "base_reliability": 0.765,
+    "base_weight": 1.180290319682377,
+    "dependence": 0.04433797335958531,
+    "vulnerabilities": {
+      "master_key": 0.015,
+      "prompt_injection": 0.021666666666666654,
+      "style_artifact": 0.08666666666666661,
+      "universal_phrase": 0.11999999999999997
+    }
+  },
+  "qwen_judge::safety_direct::original": {
+    "accuracy": 0.5133333333333333,
+    "consistency": 0.9666666666666667,
+    "base_reliability": 0.7173333333333334,
+    "base_weight": 0.9312722854897721,
+    "dependence": 0.14926805882657515,
+    "vulnerabilities": {
+      "master_key": 0.016666666666666666,
+      "prompt_injection": 0.03,
+      "style_artifact": 0.04833333333333335,
+      "universal_phrase": 0.03499999999999999
+    }
+  },
+  "qwen_judge::safety_redteam::original": {
+    "accuracy": 0.5,
+    "consistency": 0.9733333333333334,
+    "base_reliability": 0.7130000000000001,
+    "base_weight": 0.9099992046546753,
+    "dependence": 0.09469154792275757,
+    "vulnerabilities": {
+      "master_key": 0.0033333333333333335,
+      "prompt_injection": 0.0033333333333333335,
+      "style_artifact": 0.005,
+      "universal_phrase": 0.0033333333333333335
+    }
+  },
+  "qwen_judge::safety_roleplay_aware::original": {
+    "accuracy": 0.52,
+    "consistency": 0.9666666666666667,
+    "base_reliability": 0.7210000000000001,
+    "base_weight": 0.9494273554635838,
+    "dependence": 0.08918674839247445,
+    "vulnerabilities": {
+      "master_key": 0.03500000000000002,
+      "prompt_injection": 0.03333333333333337,
+      "style_artifact": 0.016666666666666666,
+      "universal_phrase": 0.06333333333333337
+    }
+  },
+  "qwen_judge::safety_rubric::original": {
+    "accuracy": 0.52,
+    "consistency": 1.0,
+    "base_reliability": 0.736,
+    "base_weight": 1.02528101558256,
+    "dependence": 0.07835229225171829,
+    "vulnerabilities": {
+      "master_key": 0.008333333333333377,
+      "prompt_injection": 0.008333333333333377,
+      "style_artifact": 0.008333333333333377,
+      "universal_phrase": 0.008333333333333377
+    }
+  }
+}

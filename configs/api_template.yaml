@@ -1,0 +1,38 @@
+project_name: sentry_jury_api_template
+seed: 42
+dataset:
+  path: data/sample_safety_eval.jsonl
+  calibration_fraction: 0.5
+
+judges:
+  - name: gpt4o_mini_judge
+    backend: litellm
+    model: openai/gpt-4o-mini
+    temperature: 0.0
+  - name: prometheus_7b_judge
+    backend: litellm
+    model: huggingface/prometheus-eval/prometheus-7b-v2.0
+    temperature: 0.0
+
+prompts:
+  - safety_direct
+  - safety_rubric
+
+attacks:
+  - universal_phrase
+  - prompt_injection
+  - style_artifact
+  - master_key
+
+probes:
+  - whitespace_normalize
+  - strip_judge_directives
+  - style_normalize
+  - strip_master_keys
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/api_template

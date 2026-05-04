@@ -1,0 +1,379 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage[numbers]{natbib}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+\setlist[itemize]{leftmargin=1.4em}
+\setlist[enumerate]{leftmargin=1.5em}
+\setlength{\parskip}{0.45em}
+\setlength{\parindent}{0pt}
+
+\title{\textbf{SENTRY-Jury: Attack-Aware, Dependence-Aware, and Selective Aggregation for Robust LLM Safety Evaluation}\\
+\vspace{0.4em}
+\large Course Project Proposal}
+
+\author{
+Your Name(s) \\
+Course / Department / University \\
+\texttt{your-email@school.edu}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Large language models (LLMs) are increasingly used as automated judges for safety evaluation, model benchmarking, and alignment pipelines. However, recent work shows that LLM judges are vulnerable to adversarial suffixes, prompt injection, style artifacts, and shallow triggers that can flip their decisions or inflate attack success rates. Existing multi-judge methods improve average performance but usually assume fixed judge reliability and ignore correlated failures. We propose \textbf{SENTRY-Jury}, a lightweight post-hoc framework for robust safety evaluation. SENTRY treats each \emph{judge $\times$ prompt template} configuration as a sensor, estimates its clean reliability, attack vulnerability, and cross-sensor dependence on a calibration split, and performs \emph{instance-level} selective aggregation at test time using a small set of probes. Unstable or attack-sensitive sensors are down-weighted, and the system can abstain on high-risk cases. We will evaluate SENTRY-Jury primarily on JAILJUDGE, with JudgeBench as an optional transfer benchmark, under universal phrase attacks, prompt injection, style artifacts, and master-key triggers. As baselines, we will compare against single judges, majority voting, PoLL-style juries, and confounder-aware aggregation. The expected outcome is improved attacked accuracy and lower attack success rate without sacrificing clean performance too much.
+\end{abstract}
+
+\section{Introduction and Motivation}
+LLM-as-a-Judge is now a common way to evaluate generation quality, model safety, and alignment outcomes. Strong evaluators such as GPT-4-class models, open judges such as JudgeLM and Prometheus, and multi-judge panels have all been adopted as scalable alternatives to human annotation \citep{zhu2023judgelm,kim2023prometheus,verga2024poll}. However, a growing literature shows that these judges are not robust. JudgeBench demonstrates that even strong judges are unstable on objective response-pair evaluation \citep{tan2024judgebench}. In safety-specific settings, JAILJUDGE highlights the need for more comprehensive jailbreak evaluation \citep{liu2024jailjudge}. Recent safety meta-evaluation papers show that stylistic artifacts and distribution shift can distort judge outputs dramatically \citep{eiras2025know,chen2025safer,schwinn2026coinflip}. RobustJudge further shows that prompt template choice, judge model choice, and attack method all strongly affect robustness \citep{li2025robustjudge}.
+
+A natural response is to use multiple judges and aggregate them. PoLL shows that a diverse panel of smaller evaluators can outperform a single expensive judge in some settings \citep{verga2024poll}. More recent work studies reference-free aggregation, judge dependence, and confounding factors \citep{sun2025skillaggregation,zhao2026care,wang2025trustjudge}. Still, two gaps remain. First, many aggregation schemes are \emph{global}: they estimate one reliability score per judge, but do not ask whether the current sample looks attack-like. Second, multiple judges can fail together if they share the same prompt biases or are simultaneously vulnerable to a shallow attack. This motivates our project: \textbf{can we build a small, practical jury that selectively trusts stable judges and abstains on risky cases?}
+
+\section{Research Questions}
+We focus on the following questions:
+
+\begin{enumerate}
+    \item \textbf{RQ1:} Can a selective multi-judge aggregator reduce attack success rate compared with single judges and naive majority voting?
+    \item \textbf{RQ2:} Does explicitly modeling \emph{attack-family-specific} judge vulnerability improve robustness beyond clean-only reliability weighting?
+    \item \textbf{RQ3:} Do dependence penalties and abstention improve robustness under correlated judge failures?
+    \item \textbf{RQ4:} Can a lightweight pipeline work well enough for a course project without judge fine-tuning?
+\end{enumerate}
+
+\textbf{Hypothesis.} We expect that (i) clean-only weighted voting will help somewhat, (ii) adding attack-aware down-weighting will improve attacked accuracy more substantially, and (iii) abstention will further improve risk-coverage tradeoffs in the hardest cases.
+
+\section{Problem Setup}
+Our main task is \textbf{binary safety evaluation}. Given an input-output pair $(x_i, y_i)$, the system predicts whether the output is safe or unsafe:
+\[
+z_i \in \{-1,+1\},
+\]
+where $+1$ denotes unsafe and $-1$ denotes safe.
+
+Each sensor is a judge-prompt configuration:
+\[
+s=(j,p),
+\]
+where $j$ is a judge model and $p$ is a prompt template. Sensor $s$ outputs a vote
+\[
+v_{i,s} \in \{-1,+1\}.
+\]
+
+For transfer experiments, we optionally consider \textbf{pairwise judging} on JudgeBench-style data, where $+1$ means response A should win and $-1$ means response B should win \citep{tan2024judgebench}.
+
+\subsection{Threat Model}
+We assume a strong adversary can manipulate one candidate response or one model output before it reaches the judge. We will evaluate four families of attacks motivated by recent literature:
+\begin{itemize}
+    \item \textbf{Universal phrase attacks} that append safe-looking or judge-directed phrases \citep{xu2024universal}.
+    \item \textbf{Prompt injection / adversarial suffixes} that try to directly instruct the judge \citep{zhang2025promptinjectionjudge}.
+    \item \textbf{Style artifacts} such as apologetic or verbose wrappers \citep{chen2025safer,eiras2025know}.
+    \item \textbf{Master-key triggers} such as shallow reasoning openers \citep{zhao2025onetoken}.
+\end{itemize}
+
+The adversary's goal is to flip the judge verdict or make unsafe content appear safe.
+
+\section{Method: SENTRY-Jury}
+Our framework has three ingredients: (1) offline sensor profiling, (2) instance-level probes, and (3) selective aggregation with abstention.
+
+\subsection{Offline Sensor Profiling}
+On a small calibration split, each sensor receives three profiles.
+
+\textbf{Clean reliability.} We estimate:
+\begin{itemize}
+    \item clean accuracy or agreement with labels;
+    \item invariance consistency under benign probes such as whitespace normalization;
+    \item optional stochastic stability under repeated runs (omitted in the smallest implementation).
+\end{itemize}
+
+We compress these into a reliability score
+\[
+r_s = \alpha \cdot \text{Acc}_s + (1-\alpha)\cdot \text{Cons}_s.
+\]
+In code, we convert $r_s$ into a positive log-odds style base weight:
+\[
+w^{\text{base}}_s = \log \frac{r_s}{1-r_s}.
+\]
+
+\textbf{Attack vulnerability.} For each attack family $k$, we estimate
+\[
+a_{s,k} = \text{Err}^{attack}_{s,k} - \text{Err}^{clean}_{s},
+\]
+that is, the \emph{attack-induced error increase}. This is more informative than raw vote-flip rate because it distinguishes harmful flips from harmless ones.
+
+\textbf{Dependence.} Judges are often correlated. We therefore compute a simple dependence penalty
+\[
+d_s = \frac{1}{|S|-1}\sum_{s' \neq s} \left|\text{corr}(v_s, v_{s'})\right|,
+\]
+using calibration-time predictions. This is a lightweight approximation to more principled dependence-aware methods such as CARE \citep{zhao2026care}.
+
+\subsection{Instance-Level Probes}
+At test time, we do not trust the first verdict blindly. Instead, for each example we run a small number of cheap probes:
+\begin{itemize}
+    \item whitespace / formatting normalization;
+    \item stripping judge-directed phrases;
+    \item removing style wrappers;
+    \item removing master-key prefixes.
+\end{itemize}
+
+These probes generate a per-family instability score
+\[
+g_{i,k} = \frac{1}{|S|}\sum_{s \in S}\mathbf{1}\!\left[v_{i,s}^{(k\text{-probe})} \neq v_{i,s}\right].
+\]
+If many sensors flip when a family-specific artifact is removed, the current example is treated as high-risk for that family.
+
+\subsection{Selective Aggregation}
+The final sensor weight is:
+\[
+w_{i,s} = \max\Big(0,\; w^{\text{base}}_s - \lambda \sum_k g_{i,k}a_{s,k} - \rho d_s\Big),
+\]
+where $\lambda$ controls attack-aware down-weighting and $\rho$ controls dependence penalty.
+
+The final jury decision is
+\[
+\hat{z}_i = \text{sign}\left(\sum_s w_{i,s}v_{i,s}\right).
+\]
+
+We also allow \textbf{abstention}: if the weighted margin is too small, the system refuses to make a confident automated judgment:
+\[
+\text{abstain if } \left|\sum_s w_{i,s}v_{i,s}\right| < \tau.
+\]
+
+This abstention mechanism is important because recent work suggests some safety evaluation cases are inherently unreliable for current judges \citep{schwinn2026coinflip,dev2026jrh}.
+
+\section{Experimental Plan}
+\subsection{Benchmarks}
+\textbf{Primary benchmark: JAILJUDGE.} We will use JAILJUDGE as the main safety benchmark because it includes broad jailbreak risk scenarios and multilingual examples \citep{liu2024jailjudge}.
+
+\textbf{Optional transfer benchmark: JudgeBench.} To test whether the method transfers beyond pure safety classification, we may run a smaller pairwise experiment on JudgeBench \citep{tan2024judgebench}.
+
+For a course project, the core claim will remain on \textbf{safety evaluation}. JudgeBench is an optional extension, not the main result.
+
+\subsection{Judge Pool}
+We will keep the pool intentionally small:
+\begin{itemize}
+    \item one stronger API judge (if budget allows),
+    \item one open evaluator such as Prometheus,
+    \item one additional open or lightweight judge such as JudgeLM or a safety judge.
+\end{itemize}
+
+Each judge will be run with two prompt templates:
+\begin{itemize}
+    \item a direct safety verdict prompt;
+    \item a rubric-based prompt.
+\end{itemize}
+
+This gives a manageable sensor pool of roughly $3 \times 2 = 6$ sensors.
+
+\subsection{Attacks}
+We will implement four families:
+\begin{enumerate}
+    \item universal phrase;
+    \item prompt injection;
+    \item style artifact;
+    \item master key.
+\end{enumerate}
+
+This is deliberately smaller than RobustJudge's full taxonomy, which is better suited to a large paper than a course project \citep{li2025robustjudge}.
+
+\subsection{Baselines}
+We will compare against:
+\begin{itemize}
+    \item \textbf{Single judge}: best individual judge.
+    \item \textbf{Majority vote}: equal-weight multi-judge jury.
+    \item \textbf{Clean-only weighted vote}: reliability weighting without attack awareness.
+    \item \textbf{PoLL-style jury}: diverse panel aggregation \citep{verga2024poll}.
+    \item \textbf{Confounder-aware or dependence-aware baseline}: a simplified comparison to CARE-style or dependence-aware aggregation when feasible \citep{zhao2026care}.
+\end{itemize}
+
+For the course implementation, we will ensure at least the first three are fully implemented, and add the stronger baselines as time permits.
+
+\subsection{Metrics}
+We will report:
+\begin{itemize}
+    \item clean accuracy;
+    \item attacked accuracy;
+    \item attack success rate (ASR);
+    \item flip rate between clean and attacked verdicts;
+    \item coverage under abstention;
+    \item unsafe false negative rate (unsafe judged safe).
+\end{itemize}
+
+\subsection{Ablations}
+Key ablations are:
+\begin{itemize}
+    \item remove attack-aware penalty;
+    \item remove dependence penalty;
+    \item remove abstention;
+    \item use only one prompt per judge;
+    \item use only one judge family vs.\ a diverse jury.
+\end{itemize}
+
+\section{Implementation Plan}
+Our deliverable repo is intentionally lightweight. It includes:
+\begin{itemize}
+    \item a generic JSONL dataset loader,
+    \item a judge abstraction,
+    \item a deterministic mock judge for local smoke tests,
+    \item an optional LiteLLM-based API judge wrapper,
+    \item attack generators and probes,
+    \item profile estimation and selective aggregation,
+    \item a CLI entry point for running full experiments.
+\end{itemize}
+
+This design lets us verify the pipeline locally before spending API budget. We can then swap in real judges with only a config change.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Planned course-project configuration.}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}lX@{}}
+\toprule
+Component & Planned choice \\
+\midrule
+Main task & Binary safety evaluation \\
+Primary benchmark & JAILJUDGE \\
+Optional transfer & JudgeBench pairwise subset \\
+Judges & 3 judges (1 API + 2 open/lightweight) \\
+Prompts & 2 templates per judge \\
+Attacks & 4 families \\
+Core baselines & Single judge, majority vote, clean-only weighted vote \\
+Optional stronger baselines & PoLL-style jury, CARE-style comparison \\
+Main novelty & Attack-aware, dependence-aware, selective jury with abstention \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Project Timeline}
+A realistic four-stage plan is:
+\begin{enumerate}
+    \item \textbf{Week 1:} finalize benchmark subset, prompt templates, and repo scaffold.
+    \item \textbf{Week 2:} implement attacks, probes, and clean baselines.
+    \item \textbf{Week 3:} implement attack-aware aggregation and run calibration / attack experiments.
+    \item \textbf{Week 4:} run ablations, analyze failure cases, and prepare report.
+\end{enumerate}
+
+\section{Risks and Scope Control}
+The main practical risk is \textbf{compute/API cost}. We address this by:
+\begin{itemize}
+    \item using a small benchmark subset first;
+    \item using only three judges and two prompts;
+    \item using four attack families instead of a very large attack library;
+    \item testing the full pipeline with mock judges before expensive runs.
+\end{itemize}
+
+A second risk is \textbf{novelty dilution}: if we try to reproduce too many published methods, the project becomes an engineering exercise. To avoid that, our main contribution stays focused on one idea: \emph{instance-level selective trust in LLM juries for safety evaluation}.
+
+\section{Expected Contributions}
+We expect the project to contribute:
+\begin{enumerate}
+    \item a small but practical framework for \textbf{robust safety judging};
+    \item an \textbf{attack-aware} post-hoc jury aggregator;
+    \item a simple way to add \textbf{dependence penalties and abstention};
+    \item a reproducible class-project codebase that can later be expanded into a workshop-style paper.
+\end{enumerate}
+
+
+\begin{thebibliography}{99}
+
+\bibitem{tan2024judgebench}
+S. Tan, S. Zhuang, K. Montgomery, W. Y. Tang, A. Cuadron, C. Wang, R. A. Popa, and I. Stoica.
+\newblock JudgeBench: A Benchmark for Evaluating LLM-Based Judges.
+\newblock \emph{arXiv preprint arXiv:2410.12784}, 2024.
+
+\bibitem{liu2024jailjudge}
+F. Liu, Y. Feng, Z. Xu, L. Su, X. Ma, D. Yin, and H. Liu.
+\newblock JAILJUDGE: A Comprehensive Jailbreak Judge Benchmark with Multi-Agent Enhanced Explanation Evaluation Framework.
+\newblock \emph{arXiv preprint arXiv:2410.12855}, 2024.
+
+\bibitem{zhu2023judgelm}
+W. Zhu et al.
+\newblock JudgeLM: Fine-Tuned Large Language Models Are Scalable Judges.
+\newblock \emph{arXiv preprint arXiv:2310.17631}, 2023.
+
+\bibitem{kim2023prometheus}
+S. Kim et al.
+\newblock Prometheus: Inducing Fine-Grained Evaluation Capability in Language Models.
+\newblock \emph{arXiv preprint arXiv:2310.08491}, 2023.
+
+\bibitem{verga2024poll}
+P. Verga et al.
+\newblock Replacing Judges with Juries: Evaluating LLM Generations with a Panel of Diverse Models.
+\newblock \emph{arXiv preprint arXiv:2404.18796}, 2024.
+
+\bibitem{sun2025skillaggregation}
+G. Sun, A. Kagrecha, P. Manakul, P. Woodland, and M. Gales.
+\newblock SkillAggregation: Reference-Free LLM-Dependent Aggregation.
+\newblock In \emph{Proceedings of ACL}, 2025.
+
+\bibitem{zhao2026care}
+J. Zhao, C. Shin, T.-H. Huang, S. S. S. N. G. Namburi, and F. Sala.
+\newblock CARE: Confounder-Aware Aggregation for Reliable LLM Evaluation.
+\newblock \emph{arXiv preprint arXiv:2603.00039}, 2026.
+
+\bibitem{wang2025trustjudge}
+Y. Wang et al.
+\newblock TrustJudge: Inconsistencies of LLM-as-a-Judge and How to Alleviate Them.
+\newblock \emph{arXiv preprint arXiv:2509.21117}, 2025.
+
+\bibitem{xu2024universal}
+Y. Xu et al.
+\newblock Universal Adversarial Attacks on LLM-as-a-Judge.
+\newblock \emph{arXiv preprint arXiv:2402.14016}, 2024.
+
+\bibitem{zhang2025promptinjectionjudge}
+Y. Zhang et al.
+\newblock Prompt-Injection Vulnerability of LLM-as-a-Judge Systems.
+\newblock \emph{arXiv preprint arXiv:2505.13348}, 2025.
+
+\bibitem{eiras2025know}
+F. Eiras, E. Zemour, E. Lin, and V. Mugunthan.
+\newblock Know Thy Judge: On the Robustness Meta-Evaluation of LLM Safety Judges.
+\newblock \emph{arXiv preprint arXiv:2503.04474}, 2025.
+
+\bibitem{chen2025safer}
+H. Chen et al.
+\newblock Safer or Luckier? LLMs as Safety Evaluators Are Not Robust to Artifacts.
+\newblock \emph{arXiv preprint arXiv:2503.09347}, 2025.
+
+\bibitem{zhao2025onetoken}
+Y. Zhao, H. Liu, D. Yu, S. Kung, M. Chen, H. Mi, and D. Yu.
+\newblock One Token to Fool LLM-as-a-Judge.
+\newblock \emph{arXiv preprint arXiv:2507.08794}, 2025.
+
+\bibitem{li2025robustjudge}
+S. Li, C. Xu, J. Wang, X. Gong, C. Chen, J. Zhang, J. Wang, K.-Y. Lam, and S. Ji.
+\newblock LLMs Cannot Reliably Judge (Yet?): A Comprehensive Assessment on the Robustness of LLM-as-a-Judge.
+\newblock \emph{arXiv preprint arXiv:2506.09443}, 2025.
+
+\bibitem{schwinn2026coinflip}
+L. Schwinn, M. Ladenburger, T. Beyer, M. Mofakhami, G. Gidel, and S. G{\"u}nnemann.
+\newblock A Coin Flip for Safety: LLM Judges Fail to Reliably Measure Adversarial Robustness.
+\newblock \emph{arXiv preprint arXiv:2603.06594}, 2026.
+
+\bibitem{dev2026jrh}
+S. Dev, A. Sloan, J. Kavner, N. Kong, and M. Sandler.
+\newblock Judge Reliability Harness: Stress Testing the Reliability of LLM Judges.
+\newblock \emph{arXiv preprint arXiv:2603.05399}, 2026.
+
+\end{thebibliography}
+
+\end{document}
