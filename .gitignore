@@ -1,3 +1,4 @@
+api_keys.txt
 .venv/
 __pycache__/
 *.pyc
@@ -19,3 +20,4 @@ outputs/
 .env
 .DS_Store
 runs/*/prediction_cache.json
+runs/*/prediction_cache*.json

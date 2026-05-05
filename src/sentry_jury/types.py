@@ -54,11 +54,27 @@ class Sensor:
         return f"{self.judge_name}::{self.prompt_name}::{self.order_variant}"
 
 
+VALID_CATEGORIES = (
+    "violence",
+    "weapons_cbrn",
+    "cyber",
+    "privacy",
+    "self_harm",
+    "sexual",
+    "hate",
+    "illicit",
+    "none",
+    "unknown",
+)
+
+
 @dataclass
 class JudgeResult:
     decision: int
     reason: str = ""
     raw_text: str = ""
+    category: str = "unknown"
+    severity: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

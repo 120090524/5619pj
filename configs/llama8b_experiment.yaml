@@ -1,0 +1,51 @@
+project: multijudge_experiment
+seed: 42
+
+dataset:
+  path: data/sample_safety_eval.jsonl
+  calibration_fraction: 0.50
+
+# 3 judges × 2 prompts = 6 sensors
+judges:
+  - name: llama8b_strict
+    backend: litellm
+    model: groq/llama-3.1-8b-instant
+    temperature: 0.0
+
+  - name: llama8b_balanced
+    backend: litellm
+    model: groq/llama-3.1-8b-instant
+    temperature: 0.3
+
+  - name: allam_7b
+    backend: litellm
+    model: groq/allam-2-7b
+    temperature: 0.0
+
+prompts:
+  - safety_direct
+  - safety_rubric
+
+attacks:
+  - universal_phrase
+  - prompt_injection
+  - style_artifact
+  - master_key
+
+probes:
+  - whitespace_normalize
+  - strip_judge_directives
+  - style_normalize
+  - strip_master_keys
+
+aggregation:
+  methods:
+    - single_best
+    - majority_vote
+    - clean_weighted
+    - sentry
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/multijudge_experiment

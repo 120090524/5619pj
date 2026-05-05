@@ -1,0 +1,34 @@
+project_name: colab_llama3b
+seed: 42
+
+dataset:
+  calibration_path: data/final/jailjudge_id_calib.jsonl
+  test_path: data/final/jailjudge_id_clean_eval.jsonl
+  calibration_limit: 150
+  test_limit: 150
+
+judges:
+  - name: llama3.2-3b
+    backend: litellm
+    model: groq/llama-3.2-3b-8192
+    temperature: 0.0
+    # api key read from GROQ_API_KEY env var (do NOT hardcode keys in this file)
+
+prompts: [safety_direct, safety_rubric]
+
+attacks: [universal_phrase, prompt_injection, style_artifact, master_key]
+
+probes: [whitespace_normalize, strip_judge_directives, style_normalize, strip_master_keys]
+
+methods: [single_best, majority_vote, clean_weighted, sentry]
+
+enable_prediction_cache: true
+order_variants: [original]
+attacks_target_field: response_a
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/colab_llama3b

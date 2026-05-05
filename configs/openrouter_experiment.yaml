@@ -1,0 +1,51 @@
+project: openrouter_experiment
+seed: 42
+
+dataset:
+  path: data/sample_safety_eval.jsonl
+  calibration_fraction: 0.50
+
+# 3 judges x 2 prompts = 6 sensors
+judges:
+  - name: nemotron_super
+    backend: litellm
+    model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+    temperature: 0.0
+
+  - name: minimax
+    backend: litellm
+    model: openrouter/minimax/minimax-m2.5:free
+    temperature: 0.0
+
+  - name: arcee_trinity
+    backend: litellm
+    model: openrouter/arcee-ai/trinity-large-preview:free
+    temperature: 0.0
+
+prompts:
+  - safety_direct
+  - safety_rubric
+
+attacks:
+  - universal_phrase
+  - prompt_injection
+  - style_artifact
+  - master_key
+
+probes:
+  - whitespace_normalize
+  - strip_judge_directives
+  - style_normalize
+  - strip_master_keys
+
+aggregation:
+  methods:
+    - single_best
+    - majority_vote
+    - clean_weighted
+    - sentry
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/openrouter_experiment

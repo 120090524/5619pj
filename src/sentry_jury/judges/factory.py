@@ -24,6 +24,8 @@ def build_judge(spec: dict[str, Any]) -> Judge:
             name=name,
             model=spec["model"],
             temperature=float(spec.get("temperature", 0.0)),
+            api_base=spec.get("api_base"),
+            api_key=spec.get("api_key"),
         )
 
     raise ValueError(f"Unknown judge backend: {backend}")

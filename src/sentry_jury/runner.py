@@ -334,10 +334,10 @@ class ExperimentRunner:
             config.get("methods", ["single_best", "majority_vote", "clean_weighted", "sentry"])
         )
 
-        # Disk-backed cache: (sensor_key, content_hash) -> decision.
+        # Disk-backed cache: (sensor_key, content_hash) -> (decision, category, severity).
         self.enable_prediction_cache = bool(config.get("enable_prediction_cache", True))
         self._disk_cache_path = self.output_dir / "prediction_cache.json"
-        self._prediction_cache: dict[tuple[str, str], int] = self._load_disk_cache()
+        self._prediction_cache: dict[tuple[str, str], tuple[int, str, int]] = self._load_disk_cache()
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -399,13 +399,22 @@ class ExperimentRunner:
             return replace(example, response_a=example.response_b, response_b=example.response_a), -1
         raise ValueError(f"Unknown order variant: {sensor.order_variant}")
 
-    def _load_disk_cache(self) -> dict[tuple[str, str], int]:
+    def _load_disk_cache(self) -> dict[tuple[str, str], tuple[int, str, int]]:
         if not self.enable_prediction_cache or not self._disk_cache_path.exists():
             return {}
         try:
             with self._disk_cache_path.open("r", encoding="utf-8") as f:
                 raw = json.load(f)
-            loaded = {tuple(k.split("|||", 1)): v for k, v in raw.items()}
+            loaded: dict[tuple[str, str], tuple[int, str, int]] = {}
+            for k, v in raw.items():
+                key = tuple(k.split("|||", 1))
+                if isinstance(v, list) and len(v) == 3:
+                    loaded[key] = (int(v[0]), str(v[1]), int(v[2]))
+                else:
+                    # Legacy cache (decision-only). Reuse decision, mark category unknown.
+                    decision = int(v)
+                    category = "none" if decision == -1 else "unknown"
+                    loaded[key] = (decision, category, 0)
             print(f"[cache] Loaded {len(loaded)} entries from disk cache.")
             return loaded
         except Exception:
@@ -414,7 +423,7 @@ class ExperimentRunner:
     def _save_disk_cache(self) -> None:
         if not self.enable_prediction_cache:
             return
-        raw = {"|||".join(k): v for k, v in self._prediction_cache.items()}
+        raw = {"|||".join(k): list(v) for k, v in self._prediction_cache.items()}
         with self._disk_cache_path.open("w", encoding="utf-8") as f:
             json.dump(raw, f)
 
@@ -423,7 +432,7 @@ class ExperimentRunner:
         raw = json.dumps(payload, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
-    def _sensor_predict(self, example: EvalExample, sensor: Sensor) -> int:
+    def _sensor_predict(self, example: EvalExample, sensor: Sensor) -> tuple[int, str, int]:
         cache_key = (sensor.key, self._example_cache_key(example))
         if self.enable_prediction_cache and cache_key in self._prediction_cache:
             self._cache_hits += 1
@@ -438,16 +447,22 @@ class ExperimentRunner:
             raise ValueError(f"Judge returned invalid decision {decision} for sensor {sensor.key}")
 
         final_decision = sign_adjustment * decision
+        category = getattr(result, "category", "unknown") or "unknown"
+        severity = int(getattr(result, "severity", 0) or 0)
+        record = (final_decision, category, severity)
         if self.enable_prediction_cache:
-            self._prediction_cache[cache_key] = final_decision
+            self._prediction_cache[cache_key] = record
             self._save_disk_cache()
-        return final_decision
+        return record
 
-    def _collect_clean_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
+    def _collect_clean_rows(
+        self, examples: list[EvalExample]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         rows: list[dict[str, Any]] = []
+        category_rows: list[dict[str, Any]] = []
         for example in tqdm(examples, desc="clean calibration", leave=False):
             for sensor in self.sensors:
-                pred = self._sensor_predict(example, sensor)
+                pred, category, severity = self._sensor_predict(example, sensor)
                 rows.append(
                     {
                         "example_id": example.example_id,
@@ -456,15 +471,28 @@ class ExperimentRunner:
                         "label": example.label,
                     }
                 )
-        return rows
+                category_rows.append(
+                    {
+                        "example_id": example.example_id,
+                        "sensor": sensor.key,
+                        "prediction": pred,
+                        "label": example.label,
+                        "category": category,
+                        "severity": severity,
+                    }
+                )
+        return rows, category_rows
 
-    def _collect_probe_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
+    def _collect_probe_rows(
+        self, examples: list[EvalExample]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         rows: list[dict[str, Any]] = []
+        category_rows: list[dict[str, Any]] = []
         for example in tqdm(examples, desc="probe calibration", leave=False):
             for probe in self.probes:
                 probe_result = probe.apply(example)
                 for sensor in self.sensors:
-                    pred = self._sensor_predict(probe_result.example, sensor)
+                    pred, category, severity = self._sensor_predict(probe_result.example, sensor)
                     rows.append(
                         {
                             "example_id": example.example_id,
@@ -476,15 +504,31 @@ class ExperimentRunner:
                             "label": example.label,
                         }
                     )
-        return rows
+                    category_rows.append(
+                        {
+                            "example_id": example.example_id,
+                            "sensor": sensor.key,
+                            "probe_name": probe.name,
+                            "family": probe.family,
+                            "kind": probe.kind,
+                            "prediction": pred,
+                            "label": example.label,
+                            "category": category,
+                            "severity": severity,
+                        }
+                    )
+        return rows, category_rows
 
-    def _collect_attack_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
+    def _collect_attack_rows(
+        self, examples: list[EvalExample]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         rows: list[dict[str, Any]] = []
+        category_rows: list[dict[str, Any]] = []
         for example in tqdm(examples, desc="attack calibration", leave=False):
             for attack in self.attacks:
                 attacked = attack.apply(example)
                 for sensor in self.sensors:
-                    pred = self._sensor_predict(attacked.example, sensor)
+                    pred, category, severity = self._sensor_predict(attacked.example, sensor)
                     rows.append(
                         {
                             "example_id": example.example_id,
@@ -495,7 +539,19 @@ class ExperimentRunner:
                             "label": example.label,
                         }
                     )
-        return rows
+                    category_rows.append(
+                        {
+                            "example_id": example.example_id,
+                            "sensor": sensor.key,
+                            "attack_name": attack.name,
+                            "family": attack.family,
+                            "prediction": pred,
+                            "label": example.label,
+                            "category": category,
+                            "severity": severity,
+                        }
+                    )
+        return rows, category_rows
 
     def _empty_clean_df(self):
         import pandas as pd
@@ -517,9 +573,9 @@ class ExperimentRunner:
     def calibrate(self) -> dict[str, dict[str, Any]]:
         import pandas as pd
 
-        clean_rows = self._collect_clean_rows(self.calibration_examples)
-        probe_rows = self._collect_probe_rows(self.calibration_examples)
-        attack_rows = self._collect_attack_rows(self.calibration_examples)
+        clean_rows, clean_cat_rows = self._collect_clean_rows(self.calibration_examples)
+        probe_rows, probe_cat_rows = self._collect_probe_rows(self.calibration_examples)
+        attack_rows, attack_cat_rows = self._collect_attack_rows(self.calibration_examples)
 
         clean_df = pd.DataFrame(clean_rows) if clean_rows else self._empty_clean_df()
         probe_df = pd.DataFrame(probe_rows) if probe_rows else self._empty_probe_df()
@@ -530,25 +586,38 @@ class ExperimentRunner:
         write_jsonl(self.output_dir / "calibration_clean_rows.jsonl", clean_rows)
         write_jsonl(self.output_dir / "calibration_probe_rows.jsonl", probe_rows)
         write_jsonl(self.output_dir / "calibration_attack_rows.jsonl", attack_rows)
+        write_jsonl(self.output_dir / "category_clean_rows.jsonl", clean_cat_rows)
+        write_jsonl(self.output_dir / "category_probe_rows.jsonl", probe_cat_rows)
+        write_jsonl(self.output_dir / "category_attack_rows.jsonl", attack_cat_rows)
         write_json(self.output_dir / "profiles.json", profiles)
 
         return profiles
 
-    def _collect_votes(self, example: EvalExample) -> tuple[dict[str, int], dict[str, dict[str, int]]]:
+    def _collect_votes(
+        self, example: EvalExample
+    ) -> tuple[
+        dict[str, int],
+        dict[str, dict[str, int]],
+        dict[str, tuple[str, int]],
+    ]:
         base_votes: dict[str, int] = {}
+        base_extras: dict[str, tuple[str, int]] = {}
         probe_votes_by_family: dict[str, dict[str, int]] = {}
 
         for sensor in self.sensors:
-            base_votes[sensor.key] = self._sensor_predict(example, sensor)
+            decision, category, severity = self._sensor_predict(example, sensor)
+            base_votes[sensor.key] = decision
+            base_extras[sensor.key] = (category, severity)
 
         for probe in self.probes:
             probe_result = probe.apply(example)
             family_votes: dict[str, int] = {}
             for sensor in self.sensors:
-                family_votes[sensor.key] = self._sensor_predict(probe_result.example, sensor)
+                decision, _category, _severity = self._sensor_predict(probe_result.example, sensor)
+                family_votes[sensor.key] = decision
             probe_votes_by_family[probe.family] = family_votes
 
-        return base_votes, probe_votes_by_family
+        return base_votes, probe_votes_by_family, base_extras
 
     def _predict_example_with_method(
         self,
@@ -556,8 +625,8 @@ class ExperimentRunner:
         profiles: dict[str, dict[str, Any]],
         method: str,
         best_sensor: str,
-    ) -> dict[str, Any]:
-        base_votes, probe_votes_by_family = self._collect_votes(example)
+    ) -> tuple[dict[str, Any], dict[str, tuple[str, int]]]:
+        base_votes, probe_votes_by_family, base_extras = self._collect_votes(example)
 
         if method == "single_best":
             agg = aggregate_single_sensor(base_votes, best_sensor)
@@ -577,7 +646,7 @@ class ExperimentRunner:
         else:
             raise ValueError(f"Unknown method: {method}")
 
-        return {
+        prediction_row = {
             "example_id": example.example_id,
             "label": example.label,
             "prediction": agg.prediction,
@@ -587,6 +656,7 @@ class ExperimentRunner:
             "instance_risks": agg.instance_risks,
             "sensor_weights": agg.sensor_weights,
         }
+        return prediction_row, base_extras
 
     def _evaluate_split(
         self,
@@ -594,11 +664,23 @@ class ExperimentRunner:
         profiles: dict[str, dict[str, Any]],
         method: str,
         best_sensor: str,
-    ) -> list[dict[str, Any]]:
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         rows: list[dict[str, Any]] = []
+        category_rows: list[dict[str, Any]] = []
         for example in tqdm(examples, desc=f"{method}", leave=False):
-            rows.append(self._predict_example_with_method(example, profiles, method, best_sensor))
-        return rows
+            pred_row, extras = self._predict_example_with_method(example, profiles, method, best_sensor)
+            rows.append(pred_row)
+            for sensor_key, (category, severity) in extras.items():
+                category_rows.append(
+                    {
+                        "example_id": example.example_id,
+                        "sensor": sensor_key,
+                        "label": example.label,
+                        "category": category,
+                        "severity": severity,
+                    }
+                )
+        return rows, category_rows
 
     def _evaluate_attacks(
         self,
@@ -606,17 +688,34 @@ class ExperimentRunner:
         profiles: dict[str, dict[str, Any]],
         method: str,
         best_sensor: str,
-    ) -> dict[str, list[dict[str, Any]]]:
+    ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
         outputs: dict[str, list[dict[str, Any]]] = {}
+        category_outputs: dict[str, list[dict[str, Any]]] = {}
         for attack in self.attacks:
             rows: list[dict[str, Any]] = []
+            cat_rows: list[dict[str, Any]] = []
             for example in tqdm(examples, desc=f"{method}:{attack.name}", leave=False):
                 attacked = attack.apply(example)
-                pred = self._predict_example_with_method(attacked.example, profiles, method, best_sensor)
-                pred["attack_name"] = attack.name
-                rows.append(pred)
+                pred_row, extras = self._predict_example_with_method(
+                    attacked.example, profiles, method, best_sensor
+                )
+                pred_row["attack_name"] = attack.name
+                rows.append(pred_row)
+                for sensor_key, (category, severity) in extras.items():
+                    cat_rows.append(
+                        {
+                            "example_id": example.example_id,
+                            "sensor": sensor_key,
+                            "label": example.label,
+                            "attack_name": attack.name,
+                            "family": attack.family,
+                            "category": category,
+                            "severity": severity,
+                        }
+                    )
             outputs[attack.name] = rows
-        return outputs
+            category_outputs[attack.name] = cat_rows
+        return outputs, category_outputs
 
     def run(self) -> dict[str, Any]:
         profiles = self.calibrate()
@@ -642,15 +741,28 @@ class ExperimentRunner:
         }
 
         for method in self.methods:
-            clean_predictions = self._evaluate_split(self.test_examples, profiles, method, best_sensor)
+            clean_predictions, clean_category_rows = self._evaluate_split(
+                self.test_examples, profiles, method, best_sensor
+            )
             write_jsonl(self.output_dir / f"{method}_test_clean_predictions.jsonl", clean_predictions)
+            if method == self.methods[0]:
+                # Per-sensor category rows are method-independent (depend on judge output, not aggregation).
+                # Write once to avoid 4x duplication.
+                write_jsonl(self.output_dir / "category_test_clean_rows.jsonl", clean_category_rows)
             clean_metrics = summarize_predictions(clean_predictions)
 
-            attacked_predictions = self._evaluate_attacks(self.test_examples, profiles, method, best_sensor)
+            attacked_predictions, attacked_category_rows = self._evaluate_attacks(
+                self.test_examples, profiles, method, best_sensor
+            )
             method_summary = {"clean": clean_metrics, "attacks": {}}
 
             for attack_name, rows in attacked_predictions.items():
                 write_jsonl(self.output_dir / f"{method}_test_attack_{attack_name}_predictions.jsonl", rows)
+                if method == self.methods[0]:
+                    write_jsonl(
+                        self.output_dir / f"category_test_attack_{attack_name}_rows.jsonl",
+                        attacked_category_rows[attack_name],
+                    )
                 attacked_metrics = summarize_predictions(rows)
                 delta = compare_clean_vs_attack(clean_predictions, rows)
                 method_summary["attacks"][attack_name] = {**attacked_metrics, **delta}
