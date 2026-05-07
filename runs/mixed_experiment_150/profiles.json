@@ -1,80 +1,106 @@
 {
-  "gemma3n::safety_direct::original": {
-    "accuracy": 0.5466666666666666,
-    "consistency": 0.9466666666666667,
-    "base_reliability": 0.7266666666666667,
-    "base_weight": 0.977775815524836,
-    "dependence": 0.2749392698357762,
+  "gemma_judge::safety_direct::original": {
+    "accuracy": 0.4533333333333333,
+    "consistency": 0.9666666666666667,
+    "base_reliability": 0.6843333333333333,
+    "base_weight": 0.7737583238328555,
+    "dependence": 0.09062934630477808,
     "vulnerabilities": {
-      "master_key": 0.15833333333333333,
-      "prompt_injection": 0.16833333333333333,
+      "master_key": 0.028333333333333332,
+      "prompt_injection": 0.22166666666666668,
       "style_artifact": 0.06,
-      "universal_phrase": 0.14166666666666666
+      "universal_phrase": 0.16
     }
   },
-  "gemma3n::safety_rubric::original": {
-    "accuracy": 0.8,
-    "consistency": 0.8933333333333333,
-    "base_reliability": 0.8420000000000001,
-    "base_weight": 1.6731849812153605,
-    "dependence": 0.41133410136758586,
+  "gemma_judge::safety_rubric::original": {
+    "accuracy": 0.4066666666666667,
+    "consistency": 0.98,
+    "base_reliability": 0.6646666666666667,
+    "base_weight": 0.6841605998620994,
+    "dependence": 0.0744918715846546,
     "vulnerabilities": {
-      "master_key": 0.03833333333333332,
-      "prompt_injection": 0.30666666666666664,
-      "style_artifact": 0.1333333333333333,
-      "universal_phrase": 0.25333333333333335
+      "master_key": 0.0016666666666666668,
+      "prompt_injection": 0.03999999999999995,
+      "style_artifact": 0.04833333333333333,
+      "universal_phrase": 0.049999999999999926
     }
   },
-  "gpt_oss::safety_direct::original": {
-    "accuracy": 0.7933333333333333,
-    "consistency": 0.9333333333333333,
-    "base_reliability": 0.8563333333333334,
-    "base_weight": 1.7851639070061363,
-    "dependence": 0.417087235682732,
+  "llama_judge::safety_direct::original": {
+    "accuracy": 0.62,
+    "consistency": 0.9933333333333333,
+    "base_reliability": 0.788,
+    "base_weight": 1.312911815185867,
+    "dependence": 0.019096382600639145,
     "vulnerabilities": {
-      "master_key": 0.023333333333333334,
-      "prompt_injection": 0.025,
-      "style_artifact": 0.04666666666666667,
-      "universal_phrase": 0.018333333333333333
+      "master_key": 0.008333333333333321,
+      "prompt_injection": 0.006666666666666667,
+      "style_artifact": 0.008333333333333333,
+      "universal_phrase": 0.008333333333333333
     }
   },
-  "gpt_oss::safety_rubric::original": {
-    "accuracy": 0.8333333333333334,
-    "consistency": 0.92,
-    "base_reliability": 0.8723333333333334,
-    "base_weight": 1.9217489133495005,
-    "dependence": 0.45287049002507684,
+  "llama_judge::safety_rubric::original": {
+    "accuracy": 0.64,
+    "consistency": 0.96,
+    "base_reliability": 0.784,
+    "base_weight": 1.289130612666243,
+    "dependence": 0.05839338620068968,
     "vulnerabilities": {
-      "master_key": 0.046666666666666676,
-      "prompt_injection": 0.05,
-      "style_artifact": 0.08499999999999999,
-      "universal_phrase": 0.058333333333333355
+      "master_key": 0.011666666666666655,
+      "prompt_injection": 0.011666666666666667,
+      "style_artifact": 0.008333333333333333,
+      "universal_phrase": 0.0016666666666666668
     }
   },
-  "qwen7b::safety_direct::original": {
-    "accuracy": 0.5866666666666667,
-    "consistency": 0.9533333333333334,
-    "base_reliability": 0.7516666666666667,
-    "base_weight": 1.1075210335572194,
-    "dependence": 0.10254663753647453,
+  "mistral_judge::safety_direct::original": {
+    "accuracy": 0.6333333333333333,
+    "consistency": 0.98,
+    "base_reliability": 0.7893333333333333,
+    "base_weight": 1.3209116018570388,
+    "dependence": 0.1302631059085803,
     "vulnerabilities": {
-      "master_key": 0.02,
-      "prompt_injection": 0.04833333333333333,
-      "style_artifact": 0.044999999999999984,
-      "universal_phrase": 0.05
+      "master_key": 0.02000000000000003,
+      "prompt_injection": 0.02000000000000003,
+      "style_artifact": 0.02000000000000003,
+      "universal_phrase": 0.02000000000000003
     }
   },
-  "qwen7b::safety_rubric::original": {
+  "mistral_judge::safety_rubric::original": {
     "accuracy": 0.6266666666666667,
-    "consistency": 0.9466666666666667,
-    "base_reliability": 0.7706666666666667,
-    "base_weight": 1.2120793918589248,
-    "dependence": 0.12760291908156368,
+    "consistency": 0.9866666666666667,
+    "base_reliability": 0.7886666666666667,
+    "base_weight": 1.3169070901011066,
+    "dependence": 0.08262819165033083,
     "vulnerabilities": {
-      "master_key": 0.011666666666666667,
-      "prompt_injection": 0.019999999999999976,
-      "style_artifact": 0.014999999999999987,
-      "universal_phrase": 0.014999999999999987
+      "master_key": 0.0,
+      "prompt_injection": 0.0033333333333333335,
+      "style_artifact": 0.008333333333333321,
+      "universal_phrase": 0.011666666666666655
+    }
+  },
+  "qwen_judge::safety_direct::original": {
+    "accuracy": 0.62,
+    "consistency": 0.9733333333333334,
+    "base_reliability": 0.7790000000000001,
+    "base_weight": 1.2598483443529962,
+    "dependence": 0.08591497711099934,
+    "vulnerabilities": {
+      "master_key": 0.005,
+      "prompt_injection": 0.008333333333333333,
+      "style_artifact": 0.006666666666666667,
+      "universal_phrase": 0.01
+    }
+  },
+  "qwen_judge::safety_rubric::original": {
+    "accuracy": 0.6266666666666667,
+    "consistency": 0.9933333333333333,
+    "base_reliability": 0.7916666666666667,
+    "base_weight": 1.3350010667323404,
+    "dependence": 0.06880486465030076,
+    "vulnerabilities": {
+      "master_key": 0.008333333333333321,
+      "prompt_injection": 0.008333333333333321,
+      "style_artifact": 0.008333333333333321,
+      "universal_phrase": 0.008333333333333321
     }
   }
 }

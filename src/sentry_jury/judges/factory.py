@@ -5,6 +5,7 @@ from typing import Any
 from .base import Judge
 from .litellm_judge import LiteLLMJudge
 from .mock import MockJudge
+from .ollama_judge import OllamaJudge
 
 
 def build_judge(spec: dict[str, Any]) -> Judge:
@@ -23,6 +24,13 @@ def build_judge(spec: dict[str, Any]) -> Judge:
         return LiteLLMJudge(
             name=name,
             model=spec["model"],
+            temperature=float(spec.get("temperature", 0.0)),
+        )
+
+    if backend == "ollama":
+        return OllamaJudge(
+            name=name,
+            model=spec.get("model", "qwen2.5:7b"),
             temperature=float(spec.get("temperature", 0.0)),
         )
 

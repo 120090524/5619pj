@@ -1,25 +1,29 @@
-project: mixed_experiment
+project_name: mixed_experiment
 seed: 42
 
 dataset:
   calibration_path: data/final/jailjudge_id_calib.jsonl
   test_path: data/final/jailjudge_id_clean_eval.jsonl
 
-# 3 judges x 2 prompts = 6 sensors
 judges:
-  - name: qwen7b
-    backend: litellm
-    model: together_ai/Qwen/Qwen2.5-7B-Instruct-Turbo
+  - name: qwen_judge
+    backend: ollama
+    model: qwen2.5:7b
     temperature: 0.0
 
-  - name: gemma3n
-    backend: litellm
-    model: together_ai/google/gemma-3n-E4B-it
+  - name: mistral_judge
+    backend: ollama
+    model: mistral:7b
     temperature: 0.0
 
-  - name: gpt_oss
-    backend: litellm
-    model: together_ai/openai/gpt-oss-20b
+  - name: llama_judge
+    backend: ollama
+    model: llama3.1:8b
+    temperature: 0.0
+
+  - name: gemma_judge
+    backend: ollama
+    model: gemma2:9b
     temperature: 0.0
 
 prompts:
@@ -38,12 +42,16 @@ probes:
   - style_normalize
   - strip_master_keys
 
+methods:
+  - single_best
+  - majority_vote
+  - clean_weighted
+  - sentry
+  - meta_sentry
+
+meta_sentry_coverage_floor: 0.80
+
 aggregation:
-  methods:
-    - single_best
-    - majority_vote
-    - clean_weighted
-    - sentry
   lambda_attack: 1.20
   rho_dependence: 0.40
   margin: 0.35
