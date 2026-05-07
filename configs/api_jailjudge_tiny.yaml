@@ -1,0 +1,41 @@
+project_name: jailjudge_id_tiny
+seed: 42
+
+dataset:
+  calibration_path: data/final/jailjudge_id_calib.jsonl
+  test_path: data/final/jailjudge_id_clean_eval.jsonl
+  calibration_limit: 5
+  test_limit: 5
+
+judges:
+  - name: gpt4o_mini_judge
+    backend: litellm
+    model: openai/gpt-4o-mini
+    temperature: 0.0
+
+prompts:
+  - safety_direct
+  - safety_rubric
+
+attacks:
+  - universal_phrase
+
+probes:
+  - whitespace_normalize
+
+methods:
+  - sentry
+
+enable_prediction_cache: true
+
+order_variants:
+  - original
+
+attacks_target_field: response_a
+
+aggregation:
+  lambda_attack: 1.20
+  rho_dependence: 0.40
+  margin: 0.35
+
+output_dir: runs/jailjudge_id_tiny

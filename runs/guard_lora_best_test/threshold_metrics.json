@@ -1,0 +1,14 @@
+[
+  {
+    "threshold": 0.2,
+    "accuracy": 0.9583333333333334,
+    "precision_unsafe": 0.8846153846153846,
+    "recall_unsafe": 1.0,
+    "f1_unsafe": 0.9387755102040817,
+    "precision_safe": 1.0,
+    "recall_safe": 0.9387755102040817,
+    "f1_safe": 0.968421052631579,
+    "unsafe_fnr": 0.0,
+    "num_examples": 72
+  }
+]

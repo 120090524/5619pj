@@ -445,7 +445,7 @@ class ExperimentRunner:
 
     def _collect_clean_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for example in tqdm(examples, desc="clean calibration", leave=False):
+        for example in tqdm(examples, desc="clean calibration", leave=True):
             for sensor in self.sensors:
                 pred = self._sensor_predict(example, sensor)
                 rows.append(
@@ -460,7 +460,7 @@ class ExperimentRunner:
 
     def _collect_probe_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for example in tqdm(examples, desc="probe calibration", leave=False):
+        for example in tqdm(examples, desc="probe calibration", leave=True):
             for probe in self.probes:
                 probe_result = probe.apply(example)
                 for sensor in self.sensors:
@@ -480,7 +480,7 @@ class ExperimentRunner:
 
     def _collect_attack_rows(self, examples: list[EvalExample]) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for example in tqdm(examples, desc="attack calibration", leave=False):
+        for example in tqdm(examples, desc="attack calibration", leave=True):
             for attack in self.attacks:
                 attacked = attack.apply(example)
                 for sensor in self.sensors:

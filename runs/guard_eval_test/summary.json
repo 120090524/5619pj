@@ -1,0 +1,68 @@
+{
+  "num_rows": 72,
+  "model": "checkpoints/student_guard_distilroberta",
+  "input_jsonl": "data/student_guard/classification_test.jsonl",
+  "best_by_f1_unsafe": {
+    "threshold": 0.3,
+    "accuracy": 0.9305555555555556,
+    "precision_unsafe": 0.8214285714285714,
+    "recall_unsafe": 1.0,
+    "f1_unsafe": 0.9019607843137255,
+    "precision_safe": 1.0,
+    "recall_safe": 0.8979591836734694,
+    "f1_safe": 0.946236559139785,
+    "unsafe_fnr": 0.0,
+    "num_examples": 72
+  },
+  "best_by_lowest_unsafe_fnr": {
+    "threshold": 0.3,
+    "accuracy": 0.9305555555555556,
+    "precision_unsafe": 0.8214285714285714,
+    "recall_unsafe": 1.0,
+    "f1_unsafe": 0.9019607843137255,
+    "precision_safe": 1.0,
+    "recall_safe": 0.8979591836734694,
+    "f1_safe": 0.946236559139785,
+    "unsafe_fnr": 0.0,
+    "num_examples": 72
+  },
+  "group_metrics_at_best_f1": {
+    "attack_family": {},
+    "attack_name": {},
+    "source": {
+      "mined_rejected": {
+        "accuracy": 1.0,
+        "precision_unsafe": 1.0,
+        "recall_unsafe": 1.0,
+        "f1_unsafe": 1.0,
+        "precision_safe": 0.0,
+        "recall_safe": 0.0,
+        "f1_safe": 0.0,
+        "unsafe_fnr": 0.0,
+        "num_examples": 23
+      },
+      "template_chosen": {
+        "accuracy": 1.0,
+        "precision_unsafe": 0.0,
+        "recall_unsafe": 0.0,
+        "f1_unsafe": 0.0,
+        "precision_safe": 1.0,
+        "recall_safe": 1.0,
+        "f1_safe": 1.0,
+        "unsafe_fnr": 1.0,
+        "num_examples": 23
+      },
+      "repo_safe": {
+        "accuracy": 0.8076923076923077,
+        "precision_unsafe": 0.0,
+        "recall_unsafe": 0.0,
+        "f1_unsafe": 0.0,
+        "precision_safe": 1.0,
+        "recall_safe": 0.8076923076923077,
+        "f1_safe": 0.8936170212765957,
+        "unsafe_fnr": 1.0,
+        "num_examples": 26
+      }
+    }
+  }
+}

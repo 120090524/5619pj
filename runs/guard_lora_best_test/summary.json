@@ -1,0 +1,68 @@
+{
+  "num_rows": 72,
+  "model": "runs/guard_lora_sweep_deberta/lr1e-05_r16_a32_d0.05_seed42",
+  "input_jsonl": "data/student_guard/classification_test.jsonl",
+  "best_by_f1_unsafe": {
+    "threshold": 0.2,
+    "accuracy": 0.9583333333333334,
+    "precision_unsafe": 0.8846153846153846,
+    "recall_unsafe": 1.0,
+    "f1_unsafe": 0.9387755102040817,
+    "precision_safe": 1.0,
+    "recall_safe": 0.9387755102040817,
+    "f1_safe": 0.968421052631579,
+    "unsafe_fnr": 0.0,
+    "num_examples": 72
+  },
+  "best_by_lowest_unsafe_fnr": {
+    "threshold": 0.2,
+    "accuracy": 0.9583333333333334,
+    "precision_unsafe": 0.8846153846153846,
+    "recall_unsafe": 1.0,
+    "f1_unsafe": 0.9387755102040817,
+    "precision_safe": 1.0,
+    "recall_safe": 0.9387755102040817,
+    "f1_safe": 0.968421052631579,
+    "unsafe_fnr": 0.0,
+    "num_examples": 72
+  },
+  "group_metrics_at_best_f1": {
+    "attack_family": {},
+    "attack_name": {},
+    "source": {
+      "mined_rejected": {
+        "accuracy": 1.0,
+        "precision_unsafe": 1.0,
+        "recall_unsafe": 1.0,
+        "f1_unsafe": 1.0,
+        "precision_safe": 0.0,
+        "recall_safe": 0.0,
+        "f1_safe": 0.0,
+        "unsafe_fnr": 0.0,
+        "num_examples": 23
+      },
+      "template_chosen": {
+        "accuracy": 1.0,
+        "precision_unsafe": 0.0,
+        "recall_unsafe": 0.0,
+        "f1_unsafe": 0.0,
+        "precision_safe": 1.0,
+        "recall_safe": 1.0,
+        "f1_safe": 1.0,
+        "unsafe_fnr": 1.0,
+        "num_examples": 23
+      },
+      "repo_safe": {
+        "accuracy": 0.8846153846153846,
+        "precision_unsafe": 0.0,
+        "recall_unsafe": 0.0,
+        "f1_unsafe": 0.0,
+        "precision_safe": 1.0,
+        "recall_safe": 0.8846153846153846,
+        "f1_safe": 0.9387755102040817,
+        "unsafe_fnr": 1.0,
+        "num_examples": 26
+      }
+    }
+  }
+}

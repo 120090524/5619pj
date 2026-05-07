@@ -19,3 +19,7 @@ outputs/
 .env
 .DS_Store
 runs/*/prediction_cache.json
+checkpoints/
+*.pt
+*.safetensors
+*.bin

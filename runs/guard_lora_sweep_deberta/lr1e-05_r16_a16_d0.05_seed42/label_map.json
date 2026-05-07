@@ -1,0 +1,10 @@
+{
+  "label2id": {
+    "safe": 0,
+    "unsafe": 1
+  },
+  "id2label": {
+    "0": "safe",
+    "1": "unsafe"
+  }
+}
