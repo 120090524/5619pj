@@ -1,101 +1,90 @@
 CLAUDE.md
 Project: SENTRY-Jury (CSE 5619 Security Course Project)
-This is a group course project on robust LLM-as-a-Judge safety evaluation. I am one of 5 team members. The repo is shared. My role for the remainder of the project is primarily the prompt dimension, aggregation layer analysis, and experiment running — not the model inference infrastructure (teammates are handling that).
-What You Should Do First
-Before making any changes, read these to understand the current state:
+This is a group course project on robust LLM-as-a-Judge safety evaluation. I am one of 5 team members. The repo is shared. My role is the prompt dimension, aggregation layer analysis, and experiment running.
 
-README.md — repo overview and how to run
-proposal/proposal.tex (or rendered version) — the method specification
-configs/course_project_mock.yaml and configs/api_template.yaml — to understand the panelist config schema
-src/sentry_jury/ — walk the package structure. Pay attention to:
+## What You Should Do First
+Before making any changes, read:
+- README.md
+- docs/lab_log,md — full experiment history with decisions and findings (PRIMARY reference)
+- runs/otto_prompt_ablation_v2_main/summary.json and profiles.json — latest results
+- src/sentry_jury/ — package structure
 
-runner.py — the experiment loop
-aggregator.py — where SENTRY vs majority vote vs clean_weighted is implemented
-profiles.py — calibration and dependence estimation
-probes.py — probe perturbations for online risk
-attacks.py — attack generators
-judges/ — judge backends (mock, litellm, and likely local HF models)
-prompts.py — this file is critical for my work. Check if prompt variants are defined here or in configs.
+Do not assume. Actually open and read.
 
+## Project Goal
+Prove that how you combine multiple LLM judges matters more than how many you use, and that SENTRY's attack-aware + dependence-aware + selective-abstention aggregation outperforms majority vote and clean_weighted baselines under adversarial attacks.
 
-runs/ — if teammates have pushed experiment outputs, read the latest to see what panelist configurations have already been tried
+## Core Concept
+Panelist = (judge_model, prompt) pair. Two panelists sharing the same model but different prompts are distinct — require separate inference calls. Panelist count = n_models × n_prompts.
 
-Do not assume. Actually open and read. The mid-term report (described below) may be out of date relative to main.
-Project Goal (One Sentence)
-Prove that how you combine multiple LLM judges matters more than how many you use, and that SENTRY's attack-aware + dependence-aware + selective-abstention aggregation outperforms majority vote and clean_weighted baselines — especially under adversarial attacks on the judges.
-Core Concept You Must Internalize
-Panelist = (judge_model, prompt) pair. This is the project's central definition, straight from the proposal:
+## Current Status (as of 2026-04-21) — EXPERIMENTS COMPLETE
 
-"Even if two panelists share the same underlying model, they are treated as distinct if their instructions differ."
+### My experiments (all done):
+- **V1** (gpt-4o-mini × 5 prompts, 50/50): SENTRY = clean_weighted = majority_vote. Same-model constraint collapses dependence structure.
+- **V2** (gpt-4o-mini × 5 prompts, 150 calib / 75 test): SENTRY = clean_weighted = majority_vote. Three methods fully identical, coverage 1.0.
+- **V2c** (DeepSeek-R1-Distill-Qwen-7B × 5 prompts, 50/50, local inference): SENTRY ≈ clean_weighted. Same conclusion on a weaker model. Ran 10 hours on RTX 4090 with 4-bit NF4 quant.
 
-Implication: two panelists sharing the same model but using different prompts require two independent inference calls per sample, not one call that outputs two judgments. Don't collapse them.
-This means panelist count = n_models × n_prompts (assuming full cross). Teammates have been scaling the model dimension (Llama-8b, Qwen-7b, Qwen-14b, Gemma, gpt-4o-mini). The prompt dimension is likely underdeveloped and is my contribution area.
-Current Status (as of mid-term)
+### Teammate results (panwangying branch):
+- 4-sensor (gpt-4o-mini + qwen_local × 2 prompts): SENTRY = clean_weighted, both slightly better than single_best on clean acc (0.878 vs 0.867). Abstention triggers (coverage 0.98).
+- 6-sensor (+ mistral_local): All ensemble methods collapse to clean acc 0.687, FNR 0.827. single_best (0.873) is the clear winner. Mistral is too lenient, 4 local sensors outvote 2 API sensors.
+- panwang also fixed two bugs: aggregator.py dependence penalty (was uniform, now relative to mean), runner.py probe family vote overwriting.
 
-Pipeline is end-to-end functional: panelist profiling, calibration, probe-based risk, selective aggregation with abstention
-Two benchmarks run: JailbreakBench JBB-Behaviors subset (100 samples, 2 attacks) and JailJudge general (300 samples, 4 attacks)
-Four aggregation methods compared: single_best, majority_vote, clean_weighted, sentry
-Four attack types supported: universal safe-looking phrases, prompt injection, style artifacts, master-key prefix
+### Other teammate (qwen2.5:7b × 6 prompts, ToxicChat 300):
+- SENTRY = clean_weighted. clean acc only 0.627 (model too weak). Same-model constraint same conclusion.
 
-Key Finding from Mid-Term
-SENTRY and clean_weighted produce nearly identical results. Reason: mid-term only used 2 panelists. With N=2 there's no meaningful dependence structure to model and probe signals have nothing to differentiate. SENTRY's extra mechanisms essentially no-op and it degrades to clean_weighted.
-Separately confirmed: majority_vote is not a safe default. In some attack settings (e.g. Benchmark I prompt injection ASR=0.0625, Benchmark II master-key flip rate), it is worse than single_best. This finding is already solid and should be preserved.
-Recent Progress (Post Mid-Term, from teammates)
-Teammates are now running 6 panelists. A preview result from a teammate shows dependence values in [0.17, 0.69] range — better spread than N=2 but still room to grow by adding heterogeneous judges. I need to verify from the repo exactly what the current 6-panelist configuration looks like (is it 6 models × 1 prompt, 3 models × 2 prompts, etc.) before I add anything.
-Teammates are running local 7B/8B/14B models (Qwen-7b, Llama-8b, Gemma, Qwen-14b). Each teammate typically runs a different model on their own GPU. This is compute distribution, not method design — they are splitting inference load, not expanding the panelist design space.
-My Role and Immediate Next Steps
-Priority 1: Understand current panelist configuration
-Read the configs and any recent runs to answer:
+### Central finding across ALL experiments:
+SENTRY has never outperformed clean_weighted in any configuration tested. Three compounding reasons when it fails:
+1. Same model → dependence band too narrow, weights don't differentiate
+2. Strong model → near-zero ASR → probe signal empty → nothing for SENTRY to respond to
+3. Weak models outnumber strong → weight mechanism can't compensate for numerical disadvantage
 
-Exactly which (model, prompt) pairs are currently active?
-Is there a prompt variant library, or does every panelist use the same underlying prompt template?
-Where are prompts defined — in prompts.py, in YAML configs, or hardcoded in the judge wrapper?
+### safety_strict finding (my contribution):
+safety_strict has dependence=0.116 (genuinely heterogeneous) but accuracy=0.413 (systematically miscalibrated). The "when in doubt → unsafe" directive conflicts with JailJudge's labeling philosophy. A panelist can be heterogeneous for the wrong reason — SENTRY penalizes it but doesn't eliminate it, dragging ensemble below single_best on some attacks. Shows that independence alone is insufficient; panelists need to be both independent AND accurate.
 
-Priority 2: Build a prompt variant library
-If prompt diversity is missing or thin, design at least 3–5 meaningfully distinct safety evaluation prompts. Not paraphrases — different evaluation strategies. Planned directions:
+### safety_strict interpretation:
+Low accuracy is not a design failure — it reflects a mismatch between the prompt's judgment philosophy and the dataset's annotation standard. On a more conservatively-labeled dataset, safety_strict might be the best sensor.
 
-safety_rubric_strict: detailed rubric, any violation → unsafe
-safety_rubric_lenient: holistic intent-based judgment
-chain_of_thought: reason first, then decide
-direct_binary: no reasoning space, force safe/unsafe output
-role_expert: role-play as safety auditor
+## My 5 Prompt Variants (implemented in prompts.py)
+- safety_direct: direct binary judgment, no reasoning space
+- safety_rubric: detailed rubric, item-by-item evaluation
+- safety_cot: chain-of-thought, reason first then decide
+- safety_strict: default toward unsafe when ambiguous
+- safety_lenient: default toward safe, intent-based holistic judgment
 
-Each prompt should be implementable such that pairing it with any existing judge model creates a valid, distinct panelist.
-Priority 3: Run experiments and analyze
-After prompt variants are in, re-run the benchmarks with expanded panelist configurations (target: model × prompt cross, realistic size 6–12 panelists). Compare SENTRY vs baselines. The key question: does SENTRY meaningfully diverge from clean_weighted once panelist diversity is increased?
-Also intentionally include same-family model pairs (e.g. Qwen-7b + Qwen-14b) to stress-test the dependence-aware redundancy penalty — this is a direct experimental lever for showing the method's value.
-What Professor Cares About
-The grading emphasis is on effort, iteration, and documented thinking — not just final numeric results. This affects how we work:
+safety_strict and safety_lenient designed with opposite tiebreakers to maximize dependence spread.
 
-Keep failed experiments. Don't delete bad run outputs; archive them under runs/ with clear names and dates.
-Git commit messages should explain what and why, not just "update" or "fix".
-Maintain a lab log (I'll keep one in a local file, possibly docs/lab_log.md later) documenting decisions and dead ends.
-If a code change is experimental or speculative, comment it as such.
+## Code Changes I Made
+- `src/sentry_jury/judges/hf_local_judge.py` — NEW: local HF model backend, 4-bit NF4 quantization, JSON parse fallback to keyword counting
+- `runner.py` — disk cache persistence (_flush_cache/_load_cache), skip-calibration if profiles.json exists
+- `litellm_judge.py` — think-block stripping, curly-quote normalization, 3-attempt retry
 
-Workflow Constraints
+NOTE: panwangying branch has aggregator.py and runner.py fixes. If running fresh experiments, consider merging those fixes first.
 
-I work in VS Code on Windows 11, RTX 4090, with a conda env dedicated to this project (separate from my CV course env)
-I do not run large local models myself — teammates handle that on their machines. I run the aggregation/calibration layer and API-based judges (gpt-4o-mini) locally
-I run scripts via terminal, not Jupyter. I inspect results as JSON/CSV files in runs/
-The repo is shared via main on GitHub. I work on feature branches (e.g. otto/prompt-variants) and submit via PR
+## Environments
+- `sentry` env: API-based runs (gpt-4o-mini via litellm)
+- `cv-gpu` env: local HF model runs (has torch + bitsandbytes). Run with: `conda activate cv-gpu`, `set HF_HOME=D:/hf_cache`, `set TRANSFORMERS_OFFLINE=1`
 
-Writing Style for Any Code Comments, Docs, or Report Contributions
+## Run Commands
+- API experiments: `conda activate sentry && python -B -m sentry_jury.cli --config configs/otto_prompt_ablation_v2_main.yaml`
+- Local model: `conda activate cv-gpu && python -B -m sentry_jury.cli --config configs/otto_prompt_ablation_v2c_together.yaml`
 
-Direct, concise, no filler
-No em dashes
-No AI-formulaic phrasing (no "it's worth noting", no parallel triplets, no "not just X but Y" cadence)
-Vary sentence length naturally
-If pointing out a problem in existing code or a teammate's approach, state it directly with a reason
+## API Budget
+- OpenAI Tier 1: 10,000 RPD. Test phase costs ~25 calls per example (5 sensors × (1 base + 4 probes)). 75 test examples ≈ 9,375 calls — fits. 100+ test examples will crash.
+- No Tier 2 available.
 
-Things to Verify in the Repo Before Making Changes
-Please actually check these rather than assuming:
+## What's Next
+- Writing report. Lab log (docs/lab_log,md) has full experiment history, decisions, and findings. Use it as the primary source.
+- Report emphasis: effort, iteration, documented thinking. Results are consistently negative (SENTRY no-ops) but the analysis of WHY is the contribution.
+- The safety_strict finding and the "conditions required for SENTRY to work" analysis are the two most reportable findings.
 
-Does the current config schema support (model, prompt) cross-product explicitly, or does it treat each panelist entry as a standalone unit?
-Where exactly are prompts stored? Do configs/*.yaml reference prompt names that resolve to template files, or are prompt strings inlined?
-Does profiles.py actually compute dependence/correlation between panelists, and is that value used by the sentry aggregator? Trace the data flow.
-How does aggregator.py decide to abstain? What's the evidence threshold?
-What has already been committed post mid-term? Check recent commits on main and any branches. Teammates may have already added things I don't know about.
+## Writing Style
+- Direct, concise, no filler
+- No em dashes
+- No AI-formulaic phrasing ("it's worth noting", parallel triplets, "not just X but Y")
+- Vary sentence length naturally
 
-Report what you find before suggesting changes. I'd rather have an accurate picture than a fast wrong one.
-
-When I give you a task, start by acknowledging what you already know from this file, then ask any clarifying questions before reading/editing files. If I ask for a change and the repo's actual state contradicts something in this doc, trust the repo, flag the discrepancy, and tell me.
+## Workflow
+- Branch: otto (current)
+- Shared repo via main on GitHub
+- Work in VS Code on Windows 11, RTX 4090
+- Scripts via terminal, results as JSON/CSV in runs/
