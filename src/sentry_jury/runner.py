@@ -26,18 +26,6 @@ from .judges import build_judge
 
 
 class ExperimentRunner:
-    """Run calibration + clean evaluation + attacked evaluation.
-
-    Backward compatible with the original course-project runner, while adding:
-    1. dataset.calibration_path / dataset.test_path support
-    2. optional calibration_limit / test_limit
-    3. disk-backed prediction caching to avoid repeated API calls
-    4. configurable methods list in YAML
-    5. configurable order_variants for pairwise experiments
-    6. configurable attacks_target_field (default: response_a)
-    7. safe handling when probes or attacks are empty
-    8. meta_sentry: learned meta-aggregator replacing hand-crafted weights
-    """
 
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config

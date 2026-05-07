@@ -7,32 +7,6 @@ from .types import AggregationOutput
 
 
 class MetaAggregator:
-    """
-    Learned meta-aggregator that replaces the hand-crafted SENTRY weight formula.
-
-    Instead of:
-        weight = base_weight - lambda * attack_penalty - rho * dependence_penalty
-
-    We learn a small logistic regression on calibration data that takes each
-    sensor's feature vector as input and outputs a reliability score used as weight.
-
-    Features per sensor (per instance):
-        - base_weight       : log-odds reliability from clean calibration
-        - dependence        : average correlation with other sensors
-        - instance_risk     : probe flip rate on this instance (max across attack families)
-        - vulnerability     : sensor's historical sensitivity to the detected risk family
-        - vote              : the sensor's actual vote (+1 / -1), encoded as 0/1
-        - confidence_proxy  : |base_weight| normalized to [0, 1]
-
-    Training target:
-        For each (sensor, example) pair in calibration, label = 1 if the sensor
-        was correct, 0 if wrong. The meta-aggregator learns to predict correctness
-        from the feature vector, then uses predicted P(correct) as the weight.
-
-    Abstention:
-        Learned threshold tau on the weighted confidence score. Optimized on
-        calibration set to maximize robust accuracy under a coverage constraint.
-    """
 
     def __init__(self, coverage_floor: float = 0.80) -> None:
         self.coverage_floor = coverage_floor
@@ -40,8 +14,6 @@ class MetaAggregator:
         self._intercept: float = 0.0
         self._tau: float = 0.0
         self._fitted = False
-
-    # ── Feature extraction ────────────────────────────────────────────────────
 
     def _sensor_features(
         self,
@@ -54,7 +26,6 @@ class MetaAggregator:
         dependence = float(profile["dependence"])
         vulnerabilities = profile.get("vulnerabilities", {})
 
-        # Worst-case instance risk weighted by sensor vulnerability
         worst_risk = 0.0
         for family, risk in instance_risks.items():
             vuln = float(vulnerabilities.get(family, 0.0))
@@ -73,22 +44,16 @@ class MetaAggregator:
             vote_encoded,
         ], dtype=np.float32)
 
-    # ── Training ──────────────────────────────────────────────────────────────
-
     def fit(
         self,
         calibration_rows: list[dict[str, Any]],
         profiles: dict[str, dict[str, Any]],
         probe_votes_by_example: dict[str, dict[str, dict[str, int]]],
     ) -> None:
-        """
-        Train the meta-aggregator on calibration data.
 
-        calibration_rows: list of dicts with keys:
-            example_id, sensor, prediction, label
-        profiles: sensor profiles from compute_profiles()
-        probe_votes_by_example: {example_id: {family: {sensor: vote}}}
-        """
+
+
+
         from sklearn.linear_model import LogisticRegression
         from sklearn.preprocessing import StandardScaler
 
@@ -184,7 +149,7 @@ class MetaAggregator:
 
         return best_tau
 
-    # ── Inference ─────────────────────────────────────────────────────────────
+
 
     def aggregate(
         self,
@@ -225,7 +190,6 @@ class MetaAggregator:
         )
 
 
-# ── Helper (mirrors aggregator.py) ────────────────────────────────────────────
 
 def _compute_instance_risks(
     base_votes: dict[str, int],
